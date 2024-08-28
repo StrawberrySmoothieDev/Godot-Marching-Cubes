@@ -3,7 +3,10 @@ A simple marching cubes implementation. WIP, meant to document my progress to ma
 
 ## More info
 Endless Abyss discord: https://discord.gg/P7HRGGn5PV
+
 Endless Abyss trello: https://trello.com/b/kq8rlxgv/endless-abyss
+
+Planet gen Milanote: https://app.milanote.com/1SJ1Nd16j7xv2T?p=0ULmZcMVtYC
 ### Sources
 https://polycoding.net/marching-cubes/part-1/
 
