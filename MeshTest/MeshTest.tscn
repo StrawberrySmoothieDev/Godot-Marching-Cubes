@@ -1,0 +1,58 @@
+[gd_scene load_steps=4 format=4 uid="uid://djf6sg8ghhmba"]
+
+[ext_resource type="Script" path="res://MeshTest/mesh_test.gd" id="1_f438v"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6637t"]
+cull_mode = 2
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_qck3k"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 1, 1, 1),
+"format": 34359738369,
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAAAAAgD8AAIA/AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAgD8AAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAIA/")
+}]
+
+[node name="MeshTest" type="MeshInstance3D"]
+material_override = SubResource("StandardMaterial3D_6637t")
+mesh = SubResource("ArrayMesh_qck3k")
+script = ExtResource("1_f438v")
+vert1 = Vector4(1, 1, 1, 0)
+vert2 = Vector4(1, 1, 1, 0)
+
+[node name="Node3D" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+
+[node name="11" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+gizmo_extents = 2.0
+
+[node name="12" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, -1)
+gizmo_extents = 2.0
+
+[node name="13" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 1)
+gizmo_extents = 2.0
+
+[node name="14" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
+gizmo_extents = 2.0
+
+[node name="15" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 1)
+gizmo_extents = 2.0
+
+[node name="16" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, -1)
+gizmo_extents = 2.0
+
+[node name="17" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2, 1)
+gizmo_extents = 2.0
+
+[node name="18" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2, -1)
+gizmo_extents = 2.0
