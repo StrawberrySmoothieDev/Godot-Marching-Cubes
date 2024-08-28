@@ -3,5 +3,7 @@ A simple marching cubes implementation. WIP, meant to document my progress to ma
 
 ## Sources
 https://polycoding.net/marching-cubes/part-1/
+
 https://www.semanticscholar.org/paper/Regularised-marching-tetrahedra%3A-improved-Treece-Prager/0adcf2cadf95f42d2ebb9ef19f92fde15ffae72c
+
 https://youtu.be/M3iI2l0ltbE?si=yw7lFsSgTqQd5LQX
