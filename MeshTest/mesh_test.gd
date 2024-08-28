@@ -1,5 +1,7 @@
 @tool
+
 extends MeshInstance3D
+class_name MarchedCube
 @export var vert1 := Vector4(0,0,0,0):
 	set(val):
 		vert1 = val
@@ -15,15 +17,28 @@ extends MeshInstance3D
 		size = val
 		upadate_mesh()
 @export var isoLevel = 1
+@onready var p0 = $"X1(0)"
+@onready var p1 = $"Y1(1)"
+@onready var p2 = $"Z1(2)"
+@onready var p3 = $"W1(3)"
+
+@onready var p4 = $"X2(4)"
+@onready var p5 = $"Y2(5)"
+@onready var p6 = $"Z2(6)"
+@onready var p7 = $"W2(7)"
+
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	print_rich("[image]res://icon.svg[/image]")
-	print(error_string(ERR_PRINTER_ON_FIRE))
+	mesh = mesh.duplicate(true)
+	#print_rich("[image]res://icon.svg[/image]")
+	#print(error_string(ERR_#printER_ON_FIRE))
 	upadate_mesh()
 
 
 
-func upadate_mesh():
+func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,extend = 1.0):
+	isoLevel = iso
 	var meshinst: ArrayMesh = mesh
 	mesh.clear_surfaces()
 	var surf_array = []
@@ -31,8 +46,21 @@ func upadate_mesh():
 	var verts = PackedVector3Array()
 	
 	var cubeIndex = 0;
-	var cubeValues = [vert1.x,vert1.y,vert1.z,vert1.w,vert2.x,vert2.y,vert2.z,vert2.w]
-
+	var cubeValues = [0,0,0,0,0,0,0,0]
+	if !noise:
+		cubeValues=[vert1.x,vert1.y,vert1.z,vert1.w,vert2.x,vert2.y,vert2.z,vert2.w]
+	else:
+		#print("PPOS "+str(p0.position+position))
+		cubeValues[0] = remap(noise.noise.get_noise_3dv(p0.position+position*extend),0,1,-1,1)
+		cubeValues[1] = remap(noise.noise.get_noise_3dv(p1.position+position*extend),0,1,-1,1)
+		cubeValues[2] = remap(noise.noise.get_noise_3dv(p2.position+position*extend),0,1,-1,1)
+		cubeValues[3] = remap(noise.noise.get_noise_3dv(p3.position+position*extend),0,1,-1,1)
+		cubeValues[4] = remap(noise.noise.get_noise_3dv(p4.position+position*extend),0,1,-1,1)
+		cubeValues[5] = remap(noise.noise.get_noise_3dv(p5.position+position*extend),0,1,-1,1)
+		cubeValues[6] = remap(noise.noise.get_noise_3dv(p6.position+position*extend),0,1,-1,1)
+		cubeValues[7] = remap(noise.noise.get_noise_3dv(p7.position+position*extend),0,1,-1,1)
+			
+	
 	if (cubeValues[0] < isoLevel): cubeIndex |= 1 #wha
 	if (cubeValues[1] < isoLevel): cubeIndex |= 2
 	if (cubeValues[2] < isoLevel): cubeIndex |= 4
@@ -43,7 +71,7 @@ func upadate_mesh():
 	if (cubeValues[7] < isoLevel): cubeIndex |= 128 #hhhhhhhhhhhhh
 	#bitwise addition????????/
 	var edges = triTable[cubeIndex] #pull things from the tritable
-	print(str(edges))
+	#print(str(edges))
 	var i = 0
 	var override = 1000 #oop
 	while edges[i] != -1 and override > 0:
@@ -66,7 +94,7 @@ func upadate_mesh():
 		tri.append(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
 		tri.append(interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
 		tri.append(interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
-		print(str(tri))
+		#print(str(tri))
 		verts.append_array(tri)
 		i+=3
 	if override <= 0:
@@ -87,7 +115,7 @@ func upadate_mesh():
 	#verts.append(lerp(vert2,vert3,0.5)) # Bottom, 4
 	#verts.append(lerp(vert3,vert1,0.5)) # TopRight, 5
 	##verts.reverse()
-	print(str(verts))
+	#print(str(verts))
 	surf_array[meshinst.ARRAY_VERTEX] = verts
 	#surf_array[meshinst.ARRAY_INDEX] = indexes
 	meshinst.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)
@@ -370,11 +398,15 @@ const triTable: Array = [
 	]
 
 
+#func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
+	#var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
+	#var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
+	##(edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1)  / (valueAtVertex2 - valueAtVertex1))
+	#var comp1 = isoLevel-valueAtVertex1
+	#var lerp = edgeVertex1 + Vector3(comp1,comp1,comp1) * (edgeVertex2-edgeVertex1) / (valueAtVertex2-valueAtVertex1)
+	##print("fac: "+str(lerp))
+	#return lerp#.clamp(-Vector3.ONE,Vector3.ONE)
 func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
 	var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
 	var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
-	#(edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1)  / (valueAtVertex2 - valueAtVertex1))
-	var comp1 = isoLevel-valueAtVertex1
-	var lerp = edgeVertex1 + Vector3(comp1,comp1,comp1) * (edgeVertex2-edgeVertex1) / (valueAtVertex2-valueAtVertex1)
-	print("fac: "+str(lerp))
-	return lerp#.clamp(-Vector3.ONE,Vector3.ONE)
+	return lerp(edgeVertex1,edgeVertex2,0.5)
