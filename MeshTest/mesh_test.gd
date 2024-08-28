@@ -118,7 +118,8 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,extend = 1.0):
 	#print(str(verts))
 	surf_array[meshinst.ARRAY_VERTEX] = verts
 	#surf_array[meshinst.ARRAY_INDEX] = indexes
-	meshinst.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)
+	if surf_array != [] and !verts.is_empty():
+		meshinst.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)
 
 
 const edgeConnections: Array  = [
@@ -398,15 +399,15 @@ const triTable: Array = [
 	]
 
 
-#func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
-	#var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
-	#var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
-	##(edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1)  / (valueAtVertex2 - valueAtVertex1))
-	#var comp1 = isoLevel-valueAtVertex1
-	#var lerp = edgeVertex1 + Vector3(comp1,comp1,comp1) * (edgeVertex2-edgeVertex1) / (valueAtVertex2-valueAtVertex1)
-	##print("fac: "+str(lerp))
-	#return lerp#.clamp(-Vector3.ONE,Vector3.ONE)
 func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
 	var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
 	var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
-	return lerp(edgeVertex1,edgeVertex2,0.5)
+	#(edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1)  / (valueAtVertex2 - valueAtVertex1))
+	var comp1 = isoLevel-valueAtVertex1
+	var lerp = edgeVertex1 + Vector3(comp1,comp1,comp1) * (edgeVertex2-edgeVertex1) / (valueAtVertex2-valueAtVertex1)
+	#print("fac: "+str(lerp))
+	return lerp#.clamp(-Vector3.ONE,Vector3.ONE)
+#func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
+	#var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
+	#var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
+	#return lerp(edgeVertex1,edgeVertex2,0.5)
