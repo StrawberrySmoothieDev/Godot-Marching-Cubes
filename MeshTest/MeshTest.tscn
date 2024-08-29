@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://djf6sg8ghhmba"]
+[gd_scene load_steps=5 format=4 uid="uid://djf6sg8ghhmba"]
 
 [ext_resource type="Script" path="res://MeshTest/mesh_test.gd" id="1_f438v"]
 [ext_resource type="Script" path="res://MeshTest/labelthing.gd" id="2_2j3qs"]
@@ -6,11 +6,21 @@
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6637t"]
 cull_mode = 2
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_ysvug"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_cixld"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 1, 1, 1),
+"format": 34359742471,
+"index_count": 12,
+"index_data": PackedByteArray("AAABAAIAAgABAAMAAQAAAAIAAQACAAMA"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 4,
+"vertex_data": PackedByteArray("AACAPwAAAAAAAIA/AAAAAAAAgD8AAIA/AACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIA=")
+}]
 
 [node name="MeshTest" type="MeshInstance3D"]
 material_override = SubResource("StandardMaterial3D_6637t")
-mesh = SubResource("ArrayMesh_ysvug")
+mesh = SubResource("ArrayMesh_cixld")
 script = ExtResource("1_f438v")
 vert1 = Vector4(-1, 1, 1, -1)
 vert2 = Vector4(1, -1, -1, 1)

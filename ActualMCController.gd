@@ -11,7 +11,11 @@ extends Node3D
 	set(val):
 		iso = val
 		update_mesh()
-@export var res: int = 1:
+@export var cubes: int = 1:
+	set(val):
+		cubes = val
+		update_mesh()
+@export_range(1,20) var res: int = 1:
 	set(val):
 		res = val
 		update_mesh()
@@ -19,13 +23,16 @@ extends Node3D
 	set(val):
 		indexed = val
 		update_mesh()
+
 # Called when the node enters the scene tree for the first time.
+var isready = false
 func _ready() -> void:
-	pass # Replace with function body.
+	isready = true
 
 
 func update_mesh():
-	if noise:
-		for i in get_children():
-			if i is MarchedCube:
-				i.update_mesh(iso,noise,res,indexed)
+	if isready:
+		if noise:
+			for i in get_children():
+				if i is MarchedCube:
+					i.update_mesh(iso,noise,cubes,res)
