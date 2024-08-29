@@ -5,17 +5,17 @@ class_name MarchedCube
 @export var vert1 := Vector4(0,0,0,0):
 	set(val):
 		vert1 = val
-		upadate_mesh()
+		update_mesh()
 @export var vert2 := Vector4(0,0,0,0):
 	set(val):
 		vert2 = val
-		upadate_mesh()
+		update_mesh()
 
 		
 @export var size := 4:
 	set(val):
 		size = val
-		upadate_mesh()
+		update_mesh()
 @export var isoLevel = 1
 @onready var p0 = $"X1(0)"
 @onready var p1 = $"Y1(1)"
@@ -33,11 +33,11 @@ func _ready():
 	mesh = mesh.duplicate(true)
 	#print_rich("[image]res://icon.svg[/image]")
 	#print(error_string(ERR_#printER_ON_FIRE))
-	upadate_mesh()
+	update_mesh()
 
 
 
-func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
+func update_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0,indexed = false):
 	isoLevel = iso
 	var meshinst: ArrayMesh = mesh
 	mesh.clear_surfaces()

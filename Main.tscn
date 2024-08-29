@@ -1,11 +1,11 @@
-[gd_scene load_steps=37 format=3 uid="uid://c6j1fifi0hhwb"]
+[gd_scene load_steps=6 format=3 uid="uid://c6j1fifi0hhwb"]
 
 [ext_resource type="Script" path="res://ActualMCController.gd" id="1_s4ymj"]
 [ext_resource type="PackedScene" uid="uid://djf6sg8ghhmba" path="res://MeshTest/MeshTest.tscn" id="2_1nbkf"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_lvrb1"]
 noise_type = 3
-frequency = 0.0164
+frequency = 1.0
 offset = Vector3(7.12, 20, -1.07)
 
 [sub_resource type="NoiseTexture3D" id="NoiseTexture3D_gpho2"]
@@ -15,231 +15,15 @@ depth = 512
 invert = true
 noise = SubResource("FastNoiseLite_lvrb1")
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_cl2vv"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_76cyc"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_tlwwe"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_ko6md"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_vwwee"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_diqmd"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_megn0"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_oo1l5"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_847g6"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_s340h"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_enu6p"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_cdyt5"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_q1c00"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_5u81o"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_5na24"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_nk45t"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_bgn06"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_v26sb"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_w1kbs"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_8vhmt"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_t356f"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_xkf1x"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_0dagt"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_2mgew"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_kke5j"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_550s5"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_4k527"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_icx5t"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_s6nq5"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_44fd0"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_gqt7t"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_t8ovp"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_x5v8t"]
 
 [node name="Node3D" type="Node3D"]
 script = ExtResource("1_s4ymj")
 noise = SubResource("NoiseTexture3D_gpho2")
-iso = -0.65
-res = 32
+iso = 0.63
+res = 28
+indexed = false
 
 [node name="MeshTest" parent="." instance=ExtResource("2_1nbkf")]
-mesh = SubResource("ArrayMesh_cl2vv")
-isoLevel = -0.65
-
-[node name="MeshTest2" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-mesh = SubResource("ArrayMesh_76cyc")
-isoLevel = -0.65
-
-[node name="MeshTest3" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-mesh = SubResource("ArrayMesh_tlwwe")
-isoLevel = -0.65
-
-[node name="MeshTest4" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-mesh = SubResource("ArrayMesh_ko6md")
-isoLevel = -0.65
-
-[node name="MeshTest5" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-mesh = SubResource("ArrayMesh_vwwee")
-isoLevel = -0.65
-
-[node name="MeshTest6" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
-mesh = SubResource("ArrayMesh_diqmd")
-isoLevel = -0.65
-
-[node name="MeshTest7" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 0)
-mesh = SubResource("ArrayMesh_megn0")
-isoLevel = -0.65
-
-[node name="MeshTest8" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7, 0)
-mesh = SubResource("ArrayMesh_oo1l5")
-isoLevel = -0.65
-
-[node name="MeshTest9" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, 0)
-mesh = SubResource("ArrayMesh_847g6")
-isoLevel = -0.65
-
-[node name="MeshTest10" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9, 0)
-mesh = SubResource("ArrayMesh_s340h")
-isoLevel = -0.65
-
-[node name="MeshTest11" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)
-mesh = SubResource("ArrayMesh_enu6p")
-isoLevel = -0.65
-
-[node name="MeshTest12" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11, 0)
-mesh = SubResource("ArrayMesh_cdyt5")
-isoLevel = -0.65
-
-[node name="MeshTest13" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12, 0)
-mesh = SubResource("ArrayMesh_q1c00")
-isoLevel = -0.65
-
-[node name="MeshTest14" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13, 0)
-mesh = SubResource("ArrayMesh_5u81o")
-isoLevel = -0.65
-
-[node name="MeshTest15" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14, 0)
-mesh = SubResource("ArrayMesh_5na24")
-isoLevel = -0.65
-
-[node name="MeshTest16" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 0)
-mesh = SubResource("ArrayMesh_nk45t")
-isoLevel = -0.65
-
-[node name="MeshTest17" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 16, 0)
-mesh = SubResource("ArrayMesh_bgn06")
-isoLevel = -0.65
-
-[node name="MeshTest18" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 17, 0)
-mesh = SubResource("ArrayMesh_v26sb")
-isoLevel = -0.65
-
-[node name="MeshTest19" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, 0)
-mesh = SubResource("ArrayMesh_w1kbs")
-isoLevel = -0.65
-
-[node name="MeshTest20" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 19, 0)
-mesh = SubResource("ArrayMesh_8vhmt")
-isoLevel = -0.65
-
-[node name="MeshTest21" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 0)
-mesh = SubResource("ArrayMesh_t356f")
-isoLevel = -0.65
-
-[node name="MeshTest22" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 21, 0)
-mesh = SubResource("ArrayMesh_xkf1x")
-isoLevel = -0.65
-
-[node name="MeshTest23" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 22, 0)
-mesh = SubResource("ArrayMesh_0dagt")
-isoLevel = -0.65
-
-[node name="MeshTest24" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 23, 0)
-mesh = SubResource("ArrayMesh_2mgew")
-isoLevel = -0.65
-
-[node name="MeshTest25" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 24, 0)
-mesh = SubResource("ArrayMesh_kke5j")
-isoLevel = -0.65
-
-[node name="MeshTest26" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 25, 0)
-mesh = SubResource("ArrayMesh_550s5")
-isoLevel = -0.65
-
-[node name="MeshTest27" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 26, 0)
-mesh = SubResource("ArrayMesh_4k527")
-isoLevel = -0.65
-
-[node name="MeshTest28" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 27, 0)
-mesh = SubResource("ArrayMesh_icx5t")
-isoLevel = -0.65
-
-[node name="MeshTest29" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 28, 0)
-mesh = SubResource("ArrayMesh_s6nq5")
-isoLevel = -0.65
-
-[node name="MeshTest30" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 29, 0)
-mesh = SubResource("ArrayMesh_44fd0")
-isoLevel = -0.65
-
-[node name="MeshTest31" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 30, 0)
-mesh = SubResource("ArrayMesh_gqt7t")
-isoLevel = -0.65
-
-[node name="MeshTest32" parent="." instance=ExtResource("2_1nbkf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 31, 0)
-mesh = SubResource("ArrayMesh_t8ovp")
-isoLevel = -0.65
+mesh = SubResource("ArrayMesh_x5v8t")
+isoLevel = 0.63

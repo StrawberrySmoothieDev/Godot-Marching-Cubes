@@ -15,6 +15,10 @@ extends Node3D
 	set(val):
 		res = val
 		update_mesh()
+@export var indexed: bool = true:
+	set(val):
+		indexed = val
+		update_mesh()
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	pass # Replace with function body.
@@ -24,4 +28,4 @@ func update_mesh():
 	if noise:
 		for i in get_children():
 			if i is MarchedCube:
-				i.upadate_mesh(iso,noise,res)
+				i.update_mesh(iso,noise,res,indexed)
