@@ -37,69 +37,89 @@ func _ready():
 
 
 
-func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,extend = 1.0):
+func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 	isoLevel = iso
 	var meshinst: ArrayMesh = mesh
 	mesh.clear_surfaces()
 	var surf_array = []
 	surf_array.resize(meshinst.ARRAY_MAX)
 	var verts = PackedVector3Array()
-	
+	var normals = PackedVector3Array()
+	var indexes = PackedInt32Array()
 	var cubeIndex = 0;
 	var cubeValues = [0,0,0,0,0,0,0,0]
-	if !noise:
-		cubeValues=[vert1.x,vert1.y,vert1.z,vert1.w,vert2.x,vert2.y,vert2.z,vert2.w]
-	else:
-		#print("PPOS "+str(p0.position+position))
-		cubeValues[0] = remap(noise.noise.get_noise_3dv(p0.position+position*extend),0,1,-1,1)
-		cubeValues[1] = remap(noise.noise.get_noise_3dv(p1.position+position*extend),0,1,-1,1)
-		cubeValues[2] = remap(noise.noise.get_noise_3dv(p2.position+position*extend),0,1,-1,1)
-		cubeValues[3] = remap(noise.noise.get_noise_3dv(p3.position+position*extend),0,1,-1,1)
-		cubeValues[4] = remap(noise.noise.get_noise_3dv(p4.position+position*extend),0,1,-1,1)
-		cubeValues[5] = remap(noise.noise.get_noise_3dv(p5.position+position*extend),0,1,-1,1)
-		cubeValues[6] = remap(noise.noise.get_noise_3dv(p6.position+position*extend),0,1,-1,1)
-		cubeValues[7] = remap(noise.noise.get_noise_3dv(p7.position+position*extend),0,1,-1,1)
+	var index = 0
+	for x in range(res):
+		for z in range(res):
 			
-	
-	if (cubeValues[0] < isoLevel): cubeIndex |= 1 #wha
-	if (cubeValues[1] < isoLevel): cubeIndex |= 2
-	if (cubeValues[2] < isoLevel): cubeIndex |= 4
-	if (cubeValues[3] < isoLevel): cubeIndex |= 8
-	if (cubeValues[4] < isoLevel): cubeIndex |= 16
-	if (cubeValues[5] < isoLevel): cubeIndex |= 32
-	if (cubeValues[6] < isoLevel): cubeIndex |= 64
-	if (cubeValues[7] < isoLevel): cubeIndex |= 128 #hhhhhhhhhhhhh
-	#bitwise addition????????/
-	var edges = triTable[cubeIndex] #pull things from the tritable
-	#print(str(edges))
-	var i = 0
-	var override = 1000 #oop
-	while edges[i] != -1 and override > 0:
-		override -=1
-		
-		var e00 = edgeConnections[edges[i]][0] #0 Basically we pull an index from the data we got from the tritable and use that to look at a certain index of edgeconnections, with the two indexes in edgeconnections being the 2 verticies of the edge
-		var e01 = edgeConnections[edges[i]][1] #1
-		#First edge is between vertexes 0 and 1
-		var e10 = edgeConnections[edges[i + 1]][0] #3
-		var e11 = edgeConnections[edges[i + 1]][1] #0
-		#Second edge is between vertexes 3 and 0
+			var offset = Vector3(x,0.0,z)
+			var offset2 = Vector3(x,0.0,z)
+			#offset = Vector3.ZERO
+			if !noise:
+				cubeValues=[vert1.x,vert1.y,vert1.z,vert1.w,vert2.x,vert2.y,vert2.z,vert2.w]
+			else:
+				#print("PPOS "+str(p0.position+position))
+				
+				cubeValues[0] = remap(noise.noise.get_noise_3dv(offset+(p0.position+position)),0,1,-1,1)
+				cubeValues[1] = remap(noise.noise.get_noise_3dv(offset+(p1.position+position)),0,1,-1,1)
+				cubeValues[2] = remap(noise.noise.get_noise_3dv(offset+(p2.position+position)),0,1,-1,1)
+				cubeValues[3] = remap(noise.noise.get_noise_3dv(offset+(p3.position+position)),0,1,-1,1)
+				cubeValues[4] = remap(noise.noise.get_noise_3dv(offset+(p4.position+position)),0,1,-1,1)
+				cubeValues[5] = remap(noise.noise.get_noise_3dv(offset+(p5.position+position)),0,1,-1,1)
+				cubeValues[6] = remap(noise.noise.get_noise_3dv(offset+(p6.position+position)),0,1,-1,1)
+				cubeValues[7] = remap(noise.noise.get_noise_3dv(offset+(p7.position+position)),0,1,-1,1)
+					
+			
+			if (cubeValues[0] < isoLevel): cubeIndex |= 1 #wha
+			if (cubeValues[1] < isoLevel): cubeIndex |= 2
+			if (cubeValues[2] < isoLevel): cubeIndex |= 4
+			if (cubeValues[3] < isoLevel): cubeIndex |= 8
+			if (cubeValues[4] < isoLevel): cubeIndex |= 16
+			if (cubeValues[5] < isoLevel): cubeIndex |= 32
+			if (cubeValues[6] < isoLevel): cubeIndex |= 64
+			if (cubeValues[7] < isoLevel): cubeIndex |= 128 #hhhhhhhhhhhhh
+			#bitwise addition????????/
+			var edges = triTable[cubeIndex] #pull things from the tritable
+			#print(str(edges))
+			var i = 0
+			var override = 1000 #oop
+			while edges[i] != -1 and override > 0:
+				override -=1
+				
+				var e00 = edgeConnections[edges[i]][0] #0 Basically we pull an index from the data we got from the tritable and use that to look at a certain index of edgeconnections, with the two indexes in edgeconnections being the 2 verticies of the edge
+				var e01 = edgeConnections[edges[i]][1] #1
+				#First edge is between vertexes 0 and 1
+				var e10 = edgeConnections[edges[i + 1]][0] #3
+				var e11 = edgeConnections[edges[i + 1]][1] #0
+				#Second edge is between vertexes 3 and 0
 
-		var e20 = edgeConnections[edges[i + 2]][0] #0
-		var e21 = edgeConnections[edges[i + 2]][1] #4
-		#Third edge is between vertexes 0 and 4
-		
-		
-		
-		var tri = []
-		tri.append(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
-		tri.append(interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
-		tri.append(interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
-		#print(str(tri))
-		verts.append_array(tri)
-		i+=3
-	if override <= 0:
-		print_debug("Hit while maximum") #krill me
-		
+				var e20 = edgeConnections[edges[i + 2]][0] #0
+				var e21 = edgeConnections[edges[i + 2]][1] #4
+				#Third edge is between vertexes 0 and 4
+				
+				
+				
+				var tri = []
+				#print(str(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])))
+				tri.append(offset+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
+				tri.append(offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
+				tri.append(offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
+				#print(str(tri))
+				#print(str(tri))
+				verts.append_array(tri)
+				var p1 = tri[0]
+				var p2 = tri[1]
+				var p3 = tri[2]
+
+				var norm = -((p2 - p1).cross(p3 - p1).normalized())
+				normals.append(norm)
+				normals.append(norm)
+				normals.append(norm)
+
+				i+=3
+			if override <= 0:
+				print_debug("Hit while maximum") #krill me
+			cubeIndex = 0
 	
 	#var indexes = PackedInt32Array([0,5,3,
 	#5,4,3,
@@ -117,6 +137,7 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,extend = 1.0):
 	##verts.reverse()
 	#print(str(verts))
 	surf_array[meshinst.ARRAY_VERTEX] = verts
+	surf_array[meshinst.ARRAY_NORMAL] = normals
 	#surf_array[meshinst.ARRAY_INDEX] = indexes
 	if surf_array != [] and !verts.is_empty():
 		meshinst.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)

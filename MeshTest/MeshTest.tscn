@@ -4,26 +4,28 @@
 [ext_resource type="Script" path="res://MeshTest/labelthing.gd" id="2_2j3qs"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6637t"]
+cull_mode = 2
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_qck3k"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_c6wkw"]
 _surfaces = [{
 "aabb": AABB(0, 0, 0, 1, 1, 1),
-"format": 34359738369,
+"format": 34359738375,
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 12,
-"vertex_data": PackedByteArray("AAAAPwAAAAAAAIA/AAAAAAAAAD8AAIA/AAAAPwAAAAAAAAAAAAAAPwAAAAAAAAAAAAAAAAAAAD8AAIA/AAAAAAAAAD8AAAAAAAAAPwAAgD8AAIA/AACAPwAAAD8AAIA/AACAPwAAAD8AAAAAAAAAPwAAgD8AAIA/AACAPwAAAD8AAAAAAAAAPwAAgD8AAAAA")
+"vertex_data": PackedByteArray("AACAPwAAAAAAAIA/AAAAAAAAgD8AAIA/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAIA/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAIA/AACAPwAAAAAAAIA/AACAPwAAAAAAAAAAAAAAAAAAgD8AAIA/AACAPwAAAAAAAAAAAAAAAAAAgD8AAAAA/7//v1RVVNX/v/+/VFVU1f+//79UVVTV/7//v1RVVNX/v/+/VFVU1f+//79UVVTV/z//P1RVVNX/P/8/VFVU1f8//z9UVVTV/z//P1RVVNX/P/8/VFVU1f8//z9UVVTV")
 }]
 
 [node name="MeshTest" type="MeshInstance3D"]
 material_override = SubResource("StandardMaterial3D_6637t")
-mesh = SubResource("ArrayMesh_qck3k")
+mesh = SubResource("ArrayMesh_c6wkw")
 script = ExtResource("1_f438v")
 vert1 = Vector4(-1, 1, 1, -1)
 vert2 = Vector4(1, -1, -1, 1)
 
 [node name="W2(7)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="W2(7)"]
 visible = false
@@ -32,6 +34,7 @@ text = "W2(7)"
 script = ExtResource("2_2j3qs")
 
 [node name="W1(3)" type="Marker3D" parent="."]
+visible = false
 
 [node name="Label3D" type="Label3D" parent="W1(3)"]
 visible = false
@@ -41,6 +44,7 @@ script = ExtResource("2_2j3qs")
 
 [node name="Z1(2)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="Z1(2)"]
 visible = false
@@ -50,6 +54,7 @@ script = ExtResource("2_2j3qs")
 
 [node name="Y1(1)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="Y1(1)"]
 visible = false
@@ -59,6 +64,7 @@ script = ExtResource("2_2j3qs")
 
 [node name="X1(0)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="X1(0)"]
 visible = false
@@ -68,6 +74,7 @@ script = ExtResource("2_2j3qs")
 
 [node name="Z2(6)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="Z2(6)"]
 visible = false
@@ -77,6 +84,7 @@ script = ExtResource("2_2j3qs")
 
 [node name="Y2(5)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="Y2(5)"]
 visible = false
@@ -86,6 +94,7 @@ script = ExtResource("2_2j3qs")
 
 [node name="X2(4)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="X2(4)"]
 visible = false

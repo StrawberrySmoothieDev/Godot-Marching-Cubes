@@ -5,13 +5,15 @@ extends Node3D
 		noise = val
 		if !noise.changed.is_connected(update_mesh):
 			noise.changed.connect(update_mesh)
+		if noise.noise and !noise.noise.changed.is_connected(update_mesh):
+			noise.noise.changed.connect(update_mesh)
 @export var iso: float = 1.0:
 	set(val):
 		iso = val
 		update_mesh()
-@export var mult: float = 1.0:
+@export var res: int = 1:
 	set(val):
-		mult = val
+		res = val
 		update_mesh()
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -19,6 +21,7 @@ func _ready() -> void:
 
 
 func update_mesh():
-	for i in get_children():
-		if i is MarchedCube:
-			i.upadate_mesh(iso,noise,mult)
+	if noise:
+		for i in get_children():
+			if i is MarchedCube:
+				i.upadate_mesh(iso,noise,res)
