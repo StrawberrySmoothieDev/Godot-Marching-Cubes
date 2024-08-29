@@ -83,9 +83,9 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 			#print(str(edges))
 			var i = 0
 			var override = 1000 #oop
+			
 			while edges[i] != -1 and override > 0:
 				override -=1
-				
 				var e00 = edgeConnections[edges[i]][0] #0 Basically we pull an index from the data we got from the tritable and use that to look at a certain index of edgeconnections, with the two indexes in edgeconnections being the 2 verticies of the edge
 				var e01 = edgeConnections[edges[i]][1] #1
 				#First edge is between vertexes 0 and 1
@@ -101,17 +101,41 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 				
 				var tri = []
 				#print(str(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])))
-				tri.append(offset+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
-				tri.append(offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
-				tri.append(offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
+				var v1 = offset+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])
+				var v2 = offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11])
+				var v3 = offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21])
+				
+				var ind1 = verts.find(v1)
+				if  ind1 != -1 and false:
+					indexes.append(ind1)
+				else:
+					tri.append(v1) #append the thinggggggggggggggggggggggggggs
+					indexes.append(verts.size())
+				index+=1
+				
+				var ind2 = verts.find(v2)
+				if  ind2 != -1 and false:
+					indexes.append(ind2)
+				else:
+					tri.append(v2) #append the thinggggggggggggggggggggggggggs
+					indexes.append(verts.size())
+				index+=1
+				
+				var ind3 = verts.find(v3)
+				if  ind3 != -1 and false:
+					indexes.append(ind3)
+				else:
+					tri.append(v3) #append the thinggggggggggggggggggggggggggs
+					indexes.append(verts.size())
+				index+=1
+				#tri.append(offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
+				#tri.append(offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
+				
 				#print(str(tri))
 				#print(str(tri))
 				verts.append_array(tri)
-				var p1 = tri[0]
-				var p2 = tri[1]
-				var p3 = tri[2]
 
-				var norm = -((p2 - p1).cross(p3 - p1).normalized())
+				var norm = -((v2 - v1).cross(v3 - v1).normalized())
 				normals.append(norm)
 				normals.append(norm)
 				normals.append(norm)
@@ -120,7 +144,20 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 			if override <= 0:
 				print_debug("Hit while maximum") #krill me
 			cubeIndex = 0
-	
+	var dupe = verts.duplicate()
+	verts.clear()
+	var it = 0
+	for vertex in dupe:
+		var idx = verts.find(vertex) #Index of vert to be reused (if it exists)
+		var newInd: int #The index of the current vert
+		if idx == -1: #If there wasn't an existing index
+			newInd = verts.size() #new ind = size of vert array
+			verts.append(vertex) #append vtex to vert array, index = newInd
+			indexes.append(newInd) #Append index to index array
+		else:
+			newInd = idx #Ot
+			indexes.push_back(newInd)
+		it+=1
 	#var indexes = PackedInt32Array([0,5,3,
 	#5,4,3,
 	#5,2,4,
@@ -136,10 +173,13 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 	#verts.append(lerp(vert3,vert1,0.5)) # TopRight, 5
 	##verts.reverse()
 	#print(str(verts))
+	#indexes.remove_at(indexes.size())
 	surf_array[meshinst.ARRAY_VERTEX] = verts
-	surf_array[meshinst.ARRAY_NORMAL] = normals
+	#surf_array[meshinst.ARRAY_NORMAL] = normals
+	surf_array[meshinst.ARRAY_INDEX] = indexes
 	#surf_array[meshinst.ARRAY_INDEX] = indexes
-	if surf_array != [] and !verts.is_empty():
+
+	if surf_array != [] and !verts.is_empty() and !indexes.is_empty():
 		meshinst.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)
 
 
