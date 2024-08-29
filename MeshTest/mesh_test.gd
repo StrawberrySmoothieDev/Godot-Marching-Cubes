@@ -146,7 +146,6 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 			cubeIndex = 0
 	var dupe = verts.duplicate()
 	verts.clear()
-	var it = 0
 	for vertex in dupe:
 		var idx = verts.find(vertex) #Index of vert to be reused (if it exists)
 		var newInd: int #The index of the current vert
@@ -157,7 +156,6 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 		else:
 			newInd = idx #Ot
 			indexes.push_back(newInd)
-		it+=1
 	#var indexes = PackedInt32Array([0,5,3,
 	#5,4,3,
 	#5,2,4,
@@ -174,11 +172,22 @@ func upadate_mesh(iso = isoLevel,noise: NoiseTexture3D = null,res = 1.0):
 	##verts.reverse()
 	#print(str(verts))
 	#indexes.remove_at(indexes.size())
+	#var it = 0
+	#for i in range(indexes.size()-1):
+		#var v1 = verts[indexes[it]]
+		#var v2 = verts[indexes[it+1]]
+		#var v3 = verts[indexes[it+2]]
+		#var norm = -((v2 - v1).cross(v3 - v1).normalized())
+		#normals.append(norm)
+#
+		#
+		#it+=1
+		
 	surf_array[meshinst.ARRAY_VERTEX] = verts
 	#surf_array[meshinst.ARRAY_NORMAL] = normals
 	surf_array[meshinst.ARRAY_INDEX] = indexes
 	#surf_array[meshinst.ARRAY_INDEX] = indexes
-
+	
 	if surf_array != [] and !verts.is_empty() and !indexes.is_empty():
 		meshinst.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)
 
