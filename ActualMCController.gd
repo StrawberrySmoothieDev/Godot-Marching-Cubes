@@ -1,47 +1,38 @@
 @tool
 extends Node3D
-@onready var chunk = preload("res://MeshTest/MeshTest.tscn")
-@export var data: GenerationData:
+@export var noise: NoiseTexture3D:
 	set(val):
-		data = val
-		if !data.changed.is_connected(update_mesh):
-			data.changed.connect(update_mesh)
-		if !data.chunkdata_changed.is_connected(make_chunks):
-			data.chunkdata_changed.connect(make_chunks)
-			
+		noise = val
+		if !noise.changed.is_connected(update_mesh):
+			noise.changed.connect(update_mesh)
+		if noise.noise and !noise.noise.changed.is_connected(update_mesh):
+			noise.noise.changed.connect(update_mesh)
+@export var iso: float = 1.0:
+	set(val):
+		iso = val
+		update_mesh()
+@export var cubes: int = 1:
+	set(val):
+		cubes = val
+		update_mesh()
+@export_range(1,20) var res: int = 1:
+	set(val):
+		res = val
+		update_mesh()
+@export var indexed: bool = true:
+	set(val):
+		indexed = val
+		update_mesh()
 
 # Called when the node enters the scene tree for the first time.
 var isready = false
 func _ready() -> void:
-	for i in get_children():
-		if i is MarchedCube:
-			i.PREPARE_TO_DIE()
 	isready = true
-	make_chunks()
+
 
 func update_mesh():
 	if isready:
-		if data:
-			print("u")
+		if noise:
 			for i in get_children():
 				if i is MarchedCube:
-					i.update_mesh(data)
-
-func make_chunks():
-	for i in get_children():
-		if i is MarchedCube:
-			i.PREPARE_TO_DIE()
-	if isready:
-		if data:
-			for x in range(data.chunks.x):
-				for y in range(data.chunks.y):
-					for z in range(data.chunks.z):
-						var inst:MarchedCube = chunk.instantiate()
-						add_child(inst)
-						inst.owner = self
-						inst.position += Vector3(x*data.cubes_per_chunk,y*data.cubes_per_chunk,z*data.cubes_per_chunk)
-	
-func _exit_tree() -> void:
-	for i in get_children():
-		if i is MarchedCube:
-			i.queue_free()
+					i.update_mesh(iso,noise,cubes,res)
