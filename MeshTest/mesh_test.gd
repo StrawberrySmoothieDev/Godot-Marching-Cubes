@@ -2,20 +2,7 @@
 
 extends MeshInstance3D
 class_name MarchedCube
-@export var vert1 := Vector4(0,0,0,0):
-	set(val):
-		vert1 = val
-		update_mesh()
-@export var vert2 := Vector4(0,0,0,0):
-	set(val):
-		vert2 = val
-		update_mesh()
 
-		
-@export var size := 4:
-	set(val):
-		size = val
-		update_mesh()
 @export var isoLevel = 1
 @onready var p0 = $"X1(0)"
 @onready var p1 = $"Y1(1)"
@@ -26,18 +13,23 @@ class_name MarchedCube
 @onready var p5 = $"Y2(5)"
 @onready var p6 = $"Z2(6)"
 @onready var p7 = $"W2(7)"
-
-
+var generating = false
+signal done_generating
+@export var save_values = false
+var saved_points_dict: Dictionary
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	mesh = mesh.duplicate(true)
 	#print_rich("[image]res://icon.svg[/image]")
 	#print(error_string(ERR_#printER_ON_FIRE))
-	update_mesh()
+	
 
 
-func update_mesh(iso = isoLevel,noise: NoiseTexture3D = null,cubes = 1.0,res = 1):
-	isoLevel = iso
+func update_mesh(data:GenerationData):
+	generating = true
+	isoLevel = data.iso
+	var res = data.base_res
+	var cubes = data.cubes_per_chunk
 	var meshinst: ArrayMesh = mesh
 	mesh.clear_surfaces()
 	var surf_array = []
@@ -48,25 +40,21 @@ func update_mesh(iso = isoLevel,noise: NoiseTexture3D = null,cubes = 1.0,res = 1
 	var cubeIndex = 0;
 	var cubeValues = [0,0,0,0,0,0,0,0]
 	var index = 0
-	for x in range((cubes/res)):
-		for y in range((cubes/res)):
-			for z in range((cubes/res)):
+	for x in range(0,cubes/res):
+		for y in range(0,cubes/res):
+			for z in range(0,cubes/res):
 				
 				var offset = Vector3(x,y,z)
 				#offset = Vector3.ZERO
-				if !noise:
-					cubeValues=[vert1.x,vert1.y,vert1.z,vert1.w,vert2.x,vert2.y,vert2.z,vert2.w]
+					#print("PPOS "+str(p0.global_position+global_position))
+				if save_values:
+					for i in range(0,8):
+						cubeValues[i] = saved_points_dict[str(((offset+Vector3(cornerOffsetsVec[i]))+(position)))]
 				else:
-					#print("PPOS "+str(p0.position+position))
-					
-					cubeValues[0] = remap(noise.noise.get_noise_3dv(res*(offset+p0.position)),0,1,-1,1)
-					cubeValues[1] = remap(noise.noise.get_noise_3dv(res*(offset+p1.position)),0,1,-1,1)
-					cubeValues[2] = remap(noise.noise.get_noise_3dv(res*(offset+p2.position)),0,1,-1,1)
-					cubeValues[3] = remap(noise.noise.get_noise_3dv(res*(offset+p3.position)),0,1,-1,1)
-					cubeValues[4] = remap(noise.noise.get_noise_3dv(res*(offset+p4.position)),0,1,-1,1)
-					cubeValues[5] = remap(noise.noise.get_noise_3dv(res*(offset+p5.position)),0,1,-1,1)
-					cubeValues[6] = remap(noise.noise.get_noise_3dv(res*(offset+p6.position)),0,1,-1,1)
-					cubeValues[7] = remap(noise.noise.get_noise_3dv(res*(offset+p7.position)),0,1,-1,1)
+					for i in range(0,8):
+						cubeValues[i] = remap(data.get_noise((offset+Vector3(cornerOffsetsVec[i]))+(position)),0,1,-1,1)
+						saved_points_dict[str((offset+Vector3(cornerOffsetsVec[i]))+(position))] = cubeValues[i]
+				#print(str(cubeValues))
 						
 				
 				if (cubeValues[0] < isoLevel): cubeIndex |= 1 #wha
@@ -77,6 +65,8 @@ func update_mesh(iso = isoLevel,noise: NoiseTexture3D = null,cubes = 1.0,res = 1
 				if (cubeValues[5] < isoLevel): cubeIndex |= 32
 				if (cubeValues[6] < isoLevel): cubeIndex |= 64
 				if (cubeValues[7] < isoLevel): cubeIndex |= 128 #hhhhhhhhhhhhh
+				#if cubeIndex == 0:
+					#return
 				#bitwise addition????????/
 				var edges = triTable[cubeIndex] #pull things from the tritable
 				#print(str(edges))
@@ -100,23 +90,23 @@ func update_mesh(iso = isoLevel,noise: NoiseTexture3D = null,cubes = 1.0,res = 1
 					
 					var tri = []
 					#print(str(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])))
-					tri.append((offset)+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
-					tri.append((offset)+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
-					tri.append((offset)+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
+					tri.append((offset*res)+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
+					tri.append((offset*res)+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
+					tri.append((offset*res)+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
 					#print(str(tri))
 					#print(str(tri))
-					for f in tri: #move verts based on resolution
-						var t = f*res
-						tri[tri.find(f)] = t
+					#for f in tri: #move verts based on resolution
+						#var t = f*res
+						#tri[tri.find(f)] = t
 					verts.append_array(tri)
-					var p1 = tri[0]
-					var p2 = tri[1]
-					var p3 = tri[2]
-
-					var norm = -((p2 - p1).cross(p3 - p1).normalized())
-					normals.append(norm)
-					normals.append(norm)
-					normals.append(norm)
+					#var p1 = tri[0]
+					#var p2 = tri[1]
+					#var p3 = tri[2]
+#
+					#var norm = -((p2 - p1).cross(p3 - p1).normalized())
+					#normals.append(norm)
+					#normals.append(norm)
+					#normals.append(norm)
 
 					i+=3
 				if override <= 0:
@@ -131,7 +121,12 @@ func update_mesh(iso = isoLevel,noise: NoiseTexture3D = null,cubes = 1.0,res = 1
 	st.index()
 	st.generate_normals()
 	st.commit(mesh)
-	
+	if !mesh.get_surface_count() <= 0:
+		$StaticBody3D/CollisionShape3D.shape = mesh.create_trimesh_shape()
+	else:
+		$StaticBody3D/CollisionShape3D.shape = null
+	generating = false
+	done_generating.emit()
 	#surf_array[meshinst.ARRAY_VERTEX] = verts
 	#surf_array[meshinst.ARRAY_NORMAL] = normals
 	##surf_array[meshinst.ARRAY_INDEX] = indexes
@@ -154,6 +149,16 @@ const cornerOffsets: Array = [
 		[1, 1, 1],
 		[1, 1, 0],
 		[0, 1, 0]
+]
+const cornerOffsetsVec: Array = [
+		Vector3i(0, 0, 1),
+		Vector3i(1, 0, 1),
+		Vector3i(1, 0, 0),
+		Vector3i(0, 0, 0),
+		Vector3i(0, 1, 1),
+		Vector3i(1, 1, 1),
+		Vector3i(1, 1, 0),
+		Vector3i(0, 1, 0)
 ]
 
 const triTable: Array = [
@@ -428,3 +433,10 @@ func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueA
 	#var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
 	#var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
 	#return lerp(edgeVertex1,edgeVertex2,0.5)
+
+func PREPARE_TO_DIE():
+	if generating:
+		await done_generating
+		queue_free()
+	else:
+		queue_free()

@@ -6,7 +6,7 @@
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6637t"]
 cull_mode = 2
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_cixld"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_hfimx"]
 _surfaces = [{
 "aabb": AABB(0, 0, 0, 1, 1, 1),
 "format": 34359742471,
@@ -18,12 +18,10 @@ _surfaces = [{
 "vertex_data": PackedByteArray("AACAPwAAAAAAAIA/AAAAAAAAgD8AAIA/AACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIA=")
 }]
 
-[node name="MeshTest" type="MeshInstance3D"]
+[node name="MeshTest" type="MeshInstance3D" groups=["MarchedCube"]]
 material_override = SubResource("StandardMaterial3D_6637t")
-mesh = SubResource("ArrayMesh_cixld")
+mesh = SubResource("ArrayMesh_hfimx")
 script = ExtResource("1_f438v")
-vert1 = Vector4(-1, 1, 1, -1)
-vert2 = Vector4(1, -1, -1, 1)
 
 [node name="W2(7)" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -103,3 +101,7 @@ visible = false
 billboard = 2
 text = "X2(4)"
 script = ExtResource("2_2j3qs")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
