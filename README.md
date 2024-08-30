@@ -1,14 +1,6 @@
 # Godot Marching Cubes
 A simple marching cubes implementation. WIP, meant to document my progress to make it a smidge easier for anyone else trying this, also so any people who want to can follow development.
 
-## Features
-* Basic marching cubes mesh generation
-* Mesh indexing (merging identical vertices to reduce render overhead and smooth normals)
-* WIP chunk system
-* Data resources
-* Lots of jank
-
-
 ## More info
 Endless Abyss discord: https://discord.gg/P7HRGGn5PV
 
