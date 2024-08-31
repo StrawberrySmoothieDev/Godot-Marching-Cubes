@@ -6,7 +6,7 @@ struct Tri {
 	vec3 c;
 };
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // A binding to the buffer we create in our script
 

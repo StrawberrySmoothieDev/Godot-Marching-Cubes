@@ -90,6 +90,7 @@ func run_compute():
 	var output_bytes = rd.buffer_get_data(output_buffer) #Retrive newly multiplied bytes
 	var output = output_bytes.to_float32_array() #convert to float32 array from raw bytes
 	data_out = output
+	
 	#print(str(output))
 	process_output(output)
 	
@@ -97,16 +98,16 @@ func run_compute():
 func process_output(data:PackedFloat32Array):
 	var surf = SurfaceTool.new()
 	surf.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var d2: PackedFloat32Array
-	for x in range(data.size()):
-		if (!((x+1) % 4) == 0) or x == 0:
-			d2.append(data[x])
-	print(str(d2.size())) #TODO: For some reason seperating each set of 3 floats there's a zero. No idea why but it's fucking everything up lol.
-	for i in range(0,d2.size(),3):
+	#var d2: PackedFloat32Array
+	#for x in range(data.size()):
+		#if (!((x+1) % 4) == 0) or x == 0:
+			#d2.append(data[x])
+	#print(str(d2.size())) #TODO: For some reason seperating each set of 3 floats there's a zero. No idea why but it's fucking everything up lol.
+	for i in range(0,data.size(),3):
 		var l = i
 		#if i != 0:
 			#l+=1
-		var vec = Vector3(d2[l],d2[l+1],d2[l+2])
+		var vec = Vector3(data[l],data[l+1],data[l+2])
 		surf.add_vertex(vec)
 		data_out_vec.append(vec)
 	surf.index()
