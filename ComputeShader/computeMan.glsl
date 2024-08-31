@@ -6,7 +6,7 @@ struct Tri {
 	vec3 c;
 };
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
 // A binding to the buffer we create in our script
 
@@ -312,7 +312,9 @@ void main() {
         {4,5}, {5,6}, {6,7}, {7,4},
         {0,4}, {1,5}, {2,6}, {3,7}
     };
+	vec3 offset = vec3(gl_GlobalInvocationID);
     // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups
+	
     float iso = cube_data_buffer.data[0];
     int cubes = int(cube_data_buffer.data[1]);
     int res = int(cube_data_buffer.data[2]);
@@ -321,19 +323,19 @@ void main() {
     
     int cubeIndex = 0;
     float[] cubeValues = {0,0,0,0,0,0,0,0};
-    vec3 offset = vec3(gl_GlobalInvocationID);
+    
     for (int i = 0; i < cubeValues.length(); i++){
         cubeValues[i] = distFromCenter(cornerOffsets[i]+offset);
     }
 
-    if (cubeValues[0] < iso) cubeIndex += 1;
-    if (cubeValues[1] < iso) cubeIndex += 2;
-    if (cubeValues[2] < iso) cubeIndex += 4;
-    if (cubeValues[3] < iso) cubeIndex += 8;
-    if (cubeValues[4] < iso) cubeIndex += 16;
-    if (cubeValues[5] < iso) cubeIndex += 32;
-    if (cubeValues[6] < iso) cubeIndex += 64;
-    if (cubeValues[7] < iso) cubeIndex += 128;
+    if (cubeValues[0] < iso) cubeIndex |= 1;
+    if (cubeValues[1] < iso) cubeIndex |= 2;
+    if (cubeValues[2] < iso) cubeIndex |= 4;
+    if (cubeValues[3] < iso) cubeIndex |= 8;
+    if (cubeValues[4] < iso) cubeIndex |= 16;
+    if (cubeValues[5] < iso) cubeIndex |= 32;
+    if (cubeValues[6] < iso) cubeIndex |= 64;
+    if (cubeValues[7] < iso) cubeIndex |= 128;
 
     int i = 0;
     int override = 250;
