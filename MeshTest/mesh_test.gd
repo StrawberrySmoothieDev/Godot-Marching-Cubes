@@ -17,6 +17,7 @@ var generating = false
 signal done_generating
 @export var save_values = false
 var saved_points_dict: Dictionary
+@export var dbg = false
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	mesh = mesh.duplicate(true)
@@ -43,8 +44,9 @@ func update_mesh(data:GenerationData):
 	for x in range(0,cubes/res):
 		for y in range(0,cubes/res):
 			for z in range(0,cubes/res):
-				
-				var offset = Vector3(x,y,z)
+				if dbg:
+					print("Generated")
+				var offset = Vector3(x,y,z)*res
 				#offset = Vector3.ZERO
 					#print("PPOS "+str(p0.global_position+global_position))
 				if save_values:
@@ -52,7 +54,7 @@ func update_mesh(data:GenerationData):
 						cubeValues[i] = saved_points_dict[str(((offset+Vector3(cornerOffsetsVec[i]))+(position)))]
 				else:
 					for i in range(0,8):
-						cubeValues[i] = remap(data.get_noise((offset+Vector3(cornerOffsetsVec[i]))+(position)),0,1,-1,1)
+						cubeValues[i] = remap(data.get_noise((offset+Vector3(cornerOffsetsVec[i])*res)+(position)),0,1,-1,1)
 						saved_points_dict[str((offset+Vector3(cornerOffsetsVec[i]))+(position))] = cubeValues[i]
 				#print(str(cubeValues))
 						
@@ -90,9 +92,9 @@ func update_mesh(data:GenerationData):
 					
 					var tri = []
 					#print(str(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])))
-					tri.append((offset*res)+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])) #append the thinggggggggggggggggggggggggggs
-					tri.append((offset*res)+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]))
-					tri.append((offset*res)+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]))
+					tri.append((offset)+(res*interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01]))) #append the thinggggggggggggggggggggggggggs
+					tri.append((offset)+(res*interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11])))
+					tri.append((offset)+(res*interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21])))
 					#print(str(tri))
 					#print(str(tri))
 					#for f in tri: #move verts based on resolution
@@ -117,14 +119,16 @@ func update_mesh(data:GenerationData):
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in verts:
 		st.add_vertex(i)
-	
-	st.index()
+	if data.indexed:
+		st.index() #WARNING Indexing might not actually work pain
 	st.generate_normals()
 	st.commit(mesh)
 	if !mesh.get_surface_count() <= 0:
 		$StaticBody3D/CollisionShape3D.shape = mesh.create_trimesh_shape()
+		show()
 	else:
 		$StaticBody3D/CollisionShape3D.shape = null
+		hide()
 	generating = false
 	done_generating.emit()
 	#surf_array[meshinst.ARRAY_VERTEX] = verts

@@ -30,7 +30,10 @@ signal chunkdata_changed
 		base_res = val
 		changed.emit()
 
-@export var indexed: bool = true
+@export var indexed: bool = true:
+	set(val):
+		indexed = val
+		changed.emit()
 
 @export var sphereCenter: Vector3 = Vector3.ZERO:
 	set(val):

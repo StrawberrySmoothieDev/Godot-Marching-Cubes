@@ -1,13 +1,29 @@
 #[compute]
 #version 450
+struct Tri {
+	vec3 a;
+	vec3 b;
+	vec3 c;
+};
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 32, local_size_y = 32, local_size_z = 32) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 // A binding to the buffer we create in our script
+
 layout(set = 0, binding = 0, std430) restrict buffer McubeBuffer {
     float data[];
 }
 cube_data_buffer;
+
+layout(set=0, binding = 1, std430) restrict buffer TriBuffer {
+	Tri data[];
+}
+tri_data_buffer;
+
+layout(set = 0, binding = 2, std430) coherent buffer Counter
+{
+	uint counter;
+};
 
 //layout(set = 0, binding = 1, std430) restrict buffer NoiseBuffer {
 //    sampler3D data;
@@ -296,40 +312,34 @@ void main() {
         {4,5}, {5,6}, {6,7}, {7,4},
         {0,4}, {1,5}, {2,6}, {3,7}
     };
-    vec3 pointOffsets[] = {vec3(0.,0.,0.),vec3(1.,0.,0.)};
     // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups
     float iso = cube_data_buffer.data[0];
     int cubes = int(cube_data_buffer.data[1]);
     int res = int(cube_data_buffer.data[2]);
-    cube_data_buffer.data[gl_GlobalInvocationID.x] *= 2.0;
+    // cube_data_buffer.data[gl_GlobalInvocationID.x] *= 2.0;
     
     
     int cubeIndex = 0;
     float[] cubeValues = {0,0,0,0,0,0,0,0};
-    vec3 offset = gl_GlobalInvocationID;
+    vec3 offset = vec3(gl_GlobalInvocationID);
     for (int i = 0; i < cubeValues.length(); i++){
         cubeValues[i] = distFromCenter(cornerOffsets[i]+offset);
     }
 
-    if (cubeValues[0] < iso) cubeIndex |= 1;
-    if (cubeValues[1] < iso) cubeIndex |= 2;
-    if (cubeValues[2] < iso) cubeIndex |= 4;
-    if (cubeValues[3] < iso) cubeIndex |= 8;
-    if (cubeValues[4] < iso) cubeIndex |= 16;
-    if (cubeValues[5] < iso) cubeIndex |= 32;
-    if (cubeValues[6] < iso) cubeIndex |= 64;
-    if (cubeValues[7] < iso) cubeIndex |= 128;
+    if (cubeValues[0] < iso) cubeIndex += 1;
+    if (cubeValues[1] < iso) cubeIndex += 2;
+    if (cubeValues[2] < iso) cubeIndex += 4;
+    if (cubeValues[3] < iso) cubeIndex += 8;
+    if (cubeValues[4] < iso) cubeIndex += 16;
+    if (cubeValues[5] < iso) cubeIndex += 32;
+    if (cubeValues[6] < iso) cubeIndex += 64;
+    if (cubeValues[7] < iso) cubeIndex += 128;
 
     int i = 0;
-    int override = 1000;
+    int override = 250;
     int edges[16] = triTable[cubeIndex];
-    int vtexes = 0;
-    for (int l = 1; l <= 16;l++){
-        if (edges[l-1] == -1){
-            vtexes = l-1;
-        }
-    } //Need to find a way to calculate the number of verts to resize the verts array
-    vec3 verts[vtexes];
+
+    
     while (edges[i] != -1 && override > 0){
         override--;
         int e00 = edgeConnections[edges[i]][0];
@@ -340,11 +350,17 @@ void main() {
 
         int e20 = edgeConnections[edges[i + 2]][0];
         int e21 = edgeConnections[edges[i + 2]][1];
-        vec3[] tri;
-        tri[0] = offset+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01],iso);
-        tri[1] = offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11],iso);
-        tri[2]= offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21],iso);
-        verts.append(tri);
+        Tri triangle;
+        triangle.a = offset+interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01],iso);
+        triangle.b = offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11],iso);
+        triangle.c = offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21],iso);
+		uint index = atomicAdd(counter,uint(1));
+        tri_data_buffer.data[index] = triangle;
     }
+	// Tri tri2;
+	// tri2.a = vec3(1,2,3);
+	// tri2.b = vec3(1,2,3);
+	// tri2.c = vec3(1,2,3);
+	// tri_data_buffer.data[0] = tri2;
 
 }
