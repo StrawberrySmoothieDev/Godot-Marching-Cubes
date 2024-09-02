@@ -10,9 +10,9 @@ extends Node3D
 @export var res := 1
 @export var data_out: PackedFloat32Array
 @export var data_out_vec: PackedVector3Array
-
+@export var counter_out: PackedByteArray
 const max_tris_per_voxel : int = 5
-const max_triangles : int = max_tris_per_voxel * int(pow(1, 3))
+const max_triangles : int = max_tris_per_voxel * int(pow(8, 3))
 const bytes_per_float : int = 4
 const floats_per_triangle : int = 3 * 3
 const bytes_per_triangle : int = floats_per_triangle * bytes_per_float
@@ -25,12 +25,12 @@ var uniform_set: RID
 var output_buffer
 var input_buffer
 var counter_buffer
-
+var is_ready = false
 # Called when the node enters the scene tree for the first time.
 
 func _ready() -> void:
 	prep_compute()
-	
+	is_ready = true
 
 func prep_compute():
 	rd = RenderingServer.create_local_rendering_device() #Extra rendering device we use to run the comp shader
@@ -69,33 +69,38 @@ func prep_compute():
 	pipeline = rd.compute_pipeline_create(shader) #Make an instruction set for the GPU to execute
 
 
+
 func run_compute():
-	data_out_vec.clear()
-	data_out.clear()
-	$MeshInstance3D.mesh.clear_surfaces()
+	if is_ready:
+		data_out_vec.clear()
+		data_out.clear()
+		$MeshInstance3D.mesh.clear_surfaces()
 
-	var new_input_buffer = PackedFloat32Array([iso,cubes,res]).to_byte_array()
-	rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer)
-	var c_buffer = PackedFloat32Array([0]).to_byte_array()
-	rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
+		var new_input_buffer = PackedFloat32Array([iso,cubes,res]).to_byte_array()
+		rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer)
+		var c_buffer = PackedFloat32Array([0]).to_byte_array()
+		rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
 
-	var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
-	rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
-	rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. L17's 3rd arg must match this line's 3rd arg.
-	rd.compute_list_dispatch(compute_list,res,res,res) #Defines how many instances we want to run (x*y*z, in this case 5). Due to the fact that the shader code spesifies 2 x iterations, we are in reality running 5 instances that each run twice, effectivly running 10 times.
-	rd.compute_list_end() #ends the instruction list
-	rd.submit() #Send the code to the GPU to execute
-	rd.sync() #Syncs the CPU and GPU. Minor preformance impact, try not to do this too much. Causes the CPU to wait for the GPU to finish processing. Generally you want to wait ~2-3 frames before syncing, that way the GPU and CPU can run in parallel.
-	
-	var output_bytes = rd.buffer_get_data(output_buffer) #Retrive newly multiplied bytes
-	var output = output_bytes.to_float32_array() #convert to float32 array from raw bytes
-	data_out = output
-	
-	#print(str(output))
-	process_output(output)
-	
+		var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
+		rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
+		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. L17's 3rd arg must match this line's 3rd arg.
+		rd.compute_list_dispatch(compute_list,res,res,res) #Defines how many instances we want to run (x*y*z, in this case 5). Due to the fact that the shader code spesifies 2 x iterations, we are in reality running 5 instances that each run twice, effectivly running 10 times.
+		rd.compute_list_end() #ends the instruction list
+		rd.submit() #Send the code to the GPU to execute
+		rd.sync() #Syncs the CPU and GPU. Minor preformance impact, try not to do this too much. Causes the CPU to wait for the GPU to finish processing. Generally you want to wait ~2-3 frames before syncing, that way the GPU and CPU can run in parallel.
+		
+		var output_bytes = rd.buffer_get_data(output_buffer) #Retrive newly multiplied bytes
+		var output = output_bytes.to_float32_array() #convert to float32 array from raw bytes
+		data_out = output
+		
+		counter_out = rd.buffer_get_data(counter_buffer)
+		
+		#print(str(output))
+		process_output(output)
+		
 
 func process_output(data:PackedFloat32Array):
+	
 	var surf = SurfaceTool.new()
 	surf.begin(Mesh.PRIMITIVE_TRIANGLES)
 	#var d2: PackedFloat32Array
@@ -103,13 +108,26 @@ func process_output(data:PackedFloat32Array):
 		#if (!((x+1) % 4) == 0) or x == 0:
 			#d2.append(data[x])
 	#print(str(d2.size())) #TODO: For some reason seperating each set of 3 floats there's a zero. No idea why but it's fucking everything up lol.
-	for i in range(0,data.size(),3):
+	
+	var num_tris = counter_out.to_int32_array()[0]
+	if !num_tris:
+		print("ERROR: num_tris failed to convert")
+		return
+	#var num_tris = 3
+	for i in range(0,num_tris):
+		var index = i*12
 		var l = i
 		#if i != 0:
 			#l+=1
-		var vec = Vector3(data[l],data[l+1],data[l+2])
-		surf.add_vertex(vec)
-		data_out_vec.append(vec)
+		var posA = Vector3(data[index + 0], data[index + 1], data[index + 2])
+		var posB = Vector3(data[index + 4], data[index + 5], data[index + 6])
+		var posC = Vector3(data[index + 8], data[index + 9], data[index + 10])
+		surf.add_vertex(posA)
+		data_out_vec.append(posA)
+		surf.add_vertex(posB)
+		data_out_vec.append(posB)
+		surf.add_vertex(posC)
+		data_out_vec.append(posC)
 	surf.index()
 	surf.generate_normals()
 	surf.commit($MeshInstance3D.mesh)

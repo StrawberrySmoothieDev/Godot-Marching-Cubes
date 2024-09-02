@@ -1,4 +1,4 @@
-@tool
+#@tool
 extends Node3D
 var point_set: Array[BitMap]
 @export var resolution: int = 4

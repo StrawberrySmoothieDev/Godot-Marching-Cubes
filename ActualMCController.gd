@@ -1,4 +1,4 @@
-@tool
+#@tool
 extends Node3D
 @onready var chunk = preload("res://MeshTest/MeshTest.tscn")
 @export var data: GenerationData:

@@ -6,7 +6,7 @@
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6637t"]
 cull_mode = 2
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_sg7po"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_26fuw"]
 _surfaces = [{
 "aabb": AABB(0, 0, 0, 1, 1, 1),
 "format": 34359742471,
@@ -20,7 +20,7 @@ _surfaces = [{
 
 [node name="MeshTest" type="MeshInstance3D" groups=["MarchedCube"]]
 material_override = SubResource("StandardMaterial3D_6637t")
-mesh = SubResource("ArrayMesh_sg7po")
+mesh = SubResource("ArrayMesh_26fuw")
 script = ExtResource("1_f438v")
 dbg = null
 

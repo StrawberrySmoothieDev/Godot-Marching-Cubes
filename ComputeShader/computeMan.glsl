@@ -1,17 +1,17 @@
 #[compute]
-#version 450
+#version 460
 struct Tri {
 	vec3 a;
 	vec3 b;
 	vec3 c;
 };
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 // A binding to the buffer we create in our script
 
 layout(set = 0, binding = 0, std430) restrict buffer McubeBuffer {
-    float data[];
+	float data[];
 }
 cube_data_buffer;
 
@@ -25,6 +25,7 @@ layout(set = 0, binding = 2, std430) coherent buffer Counter
 	uint counter;
 };
 
+
 //layout(set = 0, binding = 1, std430) restrict buffer NoiseBuffer {
 //    sampler3D data;
 //}
@@ -37,6 +38,11 @@ vec3 interp(vec3 EV1, float VAV1, vec3 EV2, float VAV2,float iso){
     
     return(EV1 + vec3(comp1) * (EV2-EV1) / (VAV2 - VAV1));
 }
+// vec3 normal_calc(Tri triangle){
+// 	vec3 ab = triangle.b.xyz - triangle.a.xyz;
+// 	vec3 ac = triangle.c.xyz - triangle.a.xyz;
+// 	return(-vec4())
+// }
 // The code we want to execute in each invocation
 void main() {
     vec3 cornerOffsets[] = {
@@ -358,6 +364,7 @@ void main() {
         triangle.c = offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21],iso);
 		uint index = atomicAdd(counter,uint(1));
         tri_data_buffer.data[index] = triangle;
+		i+=3;
     }
 	// Tri tri2;
 	// tri2.a = vec3(1,2,3);
