@@ -1,108 +1,31 @@
 #[compute]
 #version 460
-struct Tri {
+//Above things are required to import this into godot.
+
+//   _  _   ___   ___   ___     ___   ___     ___    ___     _      ___    ___    _  _   ___ 
+//  | || | | __| | _ \ | __|   | _ ) | __|   |   \  | _ \   /_\    / __|  / _ \  | \| | / __|
+//  | __ | | _|  |   / | _|    | _ \ | _|    | |) | |   /  / _ \  | (_ | | (_) | | .` | \__ \
+//  |_||_| |___| |_|_\ |___|   |___/ |___|   |___/  |_|_\ /_/ \_\  \___|  \___/  |_|\_| |___/
+                                                                                          
+
+
+
+struct Tri { //Tri struct. Contains 3 points and a normal vector (normal is direction the face is facing.)
 	vec3 a;
 	vec3 b;
 	vec3 c;
 	vec3 normal;
 };
 
-vec3 mod289(vec3 x) {
-	return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
 
-vec4 mod289(vec4 x) {
-	return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
-
-vec4 permute(vec4 x) {
-	return mod289(((x*34.0)+10.0)*x);
-}
-
-vec4 taylorInvSqrt(vec4 r)
-{
-	return 1.79284291400159 - 0.85373472095314 * r;
-}
-
-float snoise(vec3 v)
-{ 
-	const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-	const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
-
-	// First corner
-	vec3 i  = floor(v + dot(v, C.yyy) );
-	vec3 x0 =   v - i + dot(i, C.xxx) ;
-
-	// Other corners
-	vec3 g = step(x0.yzx, x0.xyz);
-	vec3 l = 1.0 - g;
-	vec3 i1 = min( g.xyz, l.zxy );
-	vec3 i2 = max( g.xyz, l.zxy );
-
-	//   x0 = x0 - 0.0 + 0.0 * C.xxx;
-	//   x1 = x0 - i1  + 1.0 * C.xxx;
-	//   x2 = x0 - i2  + 2.0 * C.xxx;
-	//   x3 = x0 - 1.0 + 3.0 * C.xxx;
-	vec3 x1 = x0 - i1 + C.xxx;
-	vec3 x2 = x0 - i2 + C.yyy; // 2.0*C.x = 1/3 = C.y
-	vec3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
-
-	// Permutations
-	i = mod289(i); 
-	vec4 p = permute( permute( permute( 
-			i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-			+ i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-			+ i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-
-	// Gradients: 7x7 points over a square, mapped onto an octahedron.
-	// The ring size 17*17 = 289 is close to a multiple of 49 (49*6 = 294)
-	float n_ = 0.142857142857; // 1.0/7.0
-	vec3  ns = n_ * D.wyz - D.xzx;
-
-	vec4 j = p - 49.0 * floor(p * ns.z * ns.z);  //  mod(p,7*7)
-
-	vec4 x_ = floor(j * ns.z);
-	vec4 y_ = floor(j - 7.0 * x_ );    // mod(j,N)
-
-	vec4 x = x_ *ns.x + ns.yyyy;
-	vec4 y = y_ *ns.x + ns.yyyy;
-	vec4 h = 1.0 - abs(x) - abs(y);
-
-	vec4 b0 = vec4( x.xy, y.xy );
-	vec4 b1 = vec4( x.zw, y.zw );
-
-	vec4 s0 = floor(b0)*2.0 + 1.0;
-	vec4 s1 = floor(b1)*2.0 + 1.0;
-	vec4 sh = -step(h, vec4(0.0));
-
-	vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-	vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-
-	vec3 p0 = vec3(a0.xy,h.x);
-	vec3 p1 = vec3(a0.zw,h.y);
-	vec3 p2 = vec3(a1.xy,h.z);
-	vec3 p3 = vec3(a1.zw,h.w);
-
-	//Normalise gradients
-	vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-	p0 *= norm.x;
-	p1 *= norm.y;
-	p2 *= norm.z;
-	p3 *= norm.w;
-
-	// Mix final noise value
-	vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-	m = m * m;
-	return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
-								dot(p2,x2), dot(p3,x3) ) );
-	}
 // Invocations in the (x, y, z) dimension
 layout(local_size_x = 10, local_size_y = 10, local_size_z = 10) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
 //More info here: https://docs.godotengine.org/en/stable/tutorials/shaders/compute_shaders.html
 
 // A binding to the buffer we create in our script
 
-layout(set = 0, binding = 0, std430) restrict buffer McubeBuffer {
+layout(set = 0, binding = 0, std430) restrict buffer McubeBuffer { //Params come in here. Set is the uniform set (we don't use anything past 0 here), binding is the spesific uniform (this is uniform 0), and the last one idk. It's like compression or smthn xd. 
+//Restrict means we will only acsess it through cube_data_buffer, and buffer means it's a buffer. crazy.
 	float data[];
 }
 cube_data_buffer;
@@ -112,33 +35,33 @@ layout(set=0, binding = 1, std430) restrict buffer TriBuffer {
 }
 tri_data_buffer;
 
-layout(set = 0, binding = 2, std430) coherent buffer Counter
+layout(set = 0, binding = 2, std430) coherent buffer Counter //coherent means something xd, probably needed for cross-invocation stuff
 {
 	uint counter;
 };
 
-layout(set = 0, binding = 3) uniform sampler3D noiseMap;
+layout(set = 0, binding = 3) uniform sampler3D noiseMap; //Sampler for the noise.
 //layout(set = 0, binding = 1, std430) restrict buffer NoiseBuffer {
 //    sampler3D data;
 //}
 //noise_buffer;
-float distFromCenter(vec3 pos){
+float distFromCenter(vec3 pos){ //currently unused func for getting the distance from the center.
     return(distance(vec3(0.,0.,0.),pos));
 }
 
-vec3 interp(vec3 EV1, float VAV1, vec3 EV2, float VAV2,float iso){
+vec3 interp(vec3 EV1, float VAV1, vec3 EV2, float VAV2,float iso){ //Function used to interpolate between 2 points on a Marching Cubes voxel. TLDR if point a has a higher strength, the vertex will be closer to point a. Just watch sebastian lague's video. (https://www.youtube.com/watch?v=vTMEdHcKgM4)
     float comp1 = iso-VAV1;
     
     return(EV1 + vec3(comp1) * (EV2-EV1) / (VAV2 - VAV1));
 }
-vec3 normal_calc(Tri triangle){
+vec3 normal_calc(Tri triangle){ //Calculate the normal vector of a triangle.
 	vec3 ab = triangle.b.xyz - triangle.a.xyz;
 	vec3 ac = triangle.c.xyz - triangle.a.xyz;
 	return(-normalize(cross(ab,ac)));
 }
 // The code we want to execute in each invocation
-void main() {
-    vec3 cornerOffsets[] = {
+void main() { //Main code block
+    vec3 cornerOffsets[] = { //Positional offsets of each corner.
 		vec3(0, 0, 1),
 		vec3(1, 0, 1),
 		vec3(1, 0, 0),
@@ -148,7 +71,7 @@ void main() {
 		vec3(1, 1, 0),
 		vec3(0, 1, 0)
     };
-    int triTable[256][16] = {
+    int triTable[256][16] = { //MASSIVE table that contains all the possible permutations of MC. Don't try and make this yourself.
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -406,29 +329,28 @@ void main() {
 		{0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
     };
-    int edgeConnections[12][2] = {
+    int edgeConnections[12][2] = { //Connections between corner points.
         {0,1}, {1,2}, {2,3}, {3,0},
         {4,5}, {5,6}, {6,7}, {7,4},
         {0,4}, {1,5}, {2,6}, {3,7}
     };
 	vec3 offset = vec3(gl_GlobalInvocationID);
-    // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups
+    // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups, we can use this to figure out which voxel we're calculating.
 	
-    float iso = cube_data_buffer.data[0];
-	vec3 sphere_pos = vec3(cube_data_buffer.data[1],cube_data_buffer.data[2],cube_data_buffer.data[3]);
+    float iso = cube_data_buffer.data[0]; //Extract the iso from the buffer
+	vec3 noise_scale = vec3(cube_data_buffer.data[1],cube_data_buffer.data[2],cube_data_buffer.data[3]); //Extract the noise scale
     // cube_data_buffer.data[gl_GlobalInvocationID.x] *= 2.0;
     
     
-    int cubeIndex = 0;
-    float[] cubeValues = {0,0,0,0,0,0,0,0};
+    int cubeIndex = 0; // Lookup index for the triangulation table above
+    float[] cubeValues = {0,0,0,0,0,0,0,0}; //Values of each of the 8 vtexes in the cube
     
-    for (int i = 0; i < cubeValues.length(); i++){
-		// cubeValues[i] = distance(cornerOffsets[i]+offset,sphere_pos);
-		cubeValues[i] = texture(noiseMap,(cornerOffsets[i]+offset)*sphere_pos).r;
-        // cubeValues[i] = step(distance(cornerOffsets[i]+offset,sphere_pos),5.0)*snoise((cornerOffsets[i]+offset)/10);
+    for (int i = 0; i < cubeValues.length(); i++){ //itterate over all of them and calculate their values
+		// cubeValues[i] = distance(cornerOffsets[i]+offset,noise_scale);
+		cubeValues[i] = texture(noiseMap,(cornerOffsets[i]+offset)*noise_scale).r; //math oh ye gawds 
     }
 
-    if (cubeValues[0] < iso) cubeIndex |= 1;
+    if (cubeValues[0] < iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=
     if (cubeValues[1] < iso) cubeIndex |= 2;
     if (cubeValues[2] < iso) cubeIndex |= 4;
     if (cubeValues[3] < iso) cubeIndex |= 8;
@@ -438,13 +360,13 @@ void main() {
     if (cubeValues[7] < iso) cubeIndex |= 128;
 
     int i = 0;
-    int override = 250;
-    int edges[16] = triTable[cubeIndex];
+    int override = 250; //while loop override
+    int edges[16] = triTable[cubeIndex]; //new edge array of length 16 = the tritable index we found (eg:{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1})
 
     
-    while (edges[i] != -1 && override > 0){
-        override--;
-        int e00 = edgeConnections[edges[i]][0];
+    while (edges[i] != -1 && override > 0){ //for all the edges until we get to -1 which is marked as the end in the tri table
+        override--; //increment the override
+        int e00 = edgeConnections[edges[i]][0]; //I'm too tired to explain this rn
         int e01  = edgeConnections[edges[i]][1];
 
         int e10 = edgeConnections[edges[i + 1]][0];
@@ -457,10 +379,10 @@ void main() {
         triangle.b = offset+interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11],iso);
         triangle.c = offset+interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21],iso);
 		triangle.normal = normal_calc(triangle);
-		uint index = atomicAdd(counter,uint(1));
-        tri_data_buffer.data[index] = triangle;
+		uint index = atomicAdd(counter,uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
+        tri_data_buffer.data[index] = triangle; //append to the data buffer
 		
-		i+=3;
+		i+=3; //to the next triangle
     }
 	// Tri tri2;
 	// tri2.a = vec3(1,2,3);
