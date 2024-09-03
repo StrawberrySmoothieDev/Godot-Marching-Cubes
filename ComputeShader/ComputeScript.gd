@@ -11,7 +11,13 @@ extends Node3D
 	set(val):
 		sphere_pos = val
 		run_compute()
-@export var noise: NoiseTexture3D
+@export var noise: NoiseTexture3D:
+	set(val):
+		noise = val
+		if !noise.changed.is_connected(run_compute):
+			noise.changed.connect(run_compute)
+		if !noise.noise.changed.is_connected(run_compute):
+			noise.noise.changed.connect(run_compute)
 var data_out: PackedFloat32Array
 var data_out_vec: PackedVector3Array
 var counter_out: PackedByteArray
@@ -29,7 +35,7 @@ var uniform_set: RID
 var output_buffer: RID
 var input_buffer: RID
 var counter_buffer: RID
-var noise_buffer: RID
+var noisemap_rid: RID
 var is_ready = false
 # Called when the node enters the scene tree for the first time.
 
@@ -69,30 +75,29 @@ func prep_compute():
 	c_uniform.binding = 2
 	c_uniform.add_id(counter_buffer)
 	
+	var noisemap_format_data := RDTextureFormat.new()
+	noisemap_format_data.width = noise.width
+	noisemap_format_data.height = noise.height
+	noisemap_format_data.depth = noise.depth
+	noisemap_format_data.texture_type = RenderingDevice.TEXTURE_TYPE_3D
+	noisemap_format_data.format = RenderingDevice.DATA_FORMAT_R8_UNORM
+	noisemap_format_data.usage_bits = \
+			RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
+			RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
+			RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+	noisemap_rid = rd.texture_create(noisemap_format_data,RDTextureView.new())
+	
+	var noisemap_uniform := RDUniform.new()
+	noisemap_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	noisemap_uniform.binding = 3
+	noisemap_uniform.add_id(noisemap_rid)
 	
 	
 	
-	var format_data = RDTextureFormat.new() #Data on the actual texture 
-	format_data.width = 64 #yippee
-	format_data.height = 64 #yippeeeeeeeeeeeee
-	format_data.depth = 64 #yipppeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-	format_data.usage_bits = RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT | RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT #idk what this is but uhhhhhhhhhhhhhhh xd (Tutorial here: https://forum.godotengine.org/t/compute-shader-sampler3d-uniform/4459)
-	format_data.format = noise.get_format() #setting formats, TODO figure out how to make the shader accept lum8 maps as they only store one int per pixel instead of 4
-	var mipmaped_data = noise.get_data()
-	for i in mipmaped_data:
-		print(str(i.generate_mipmaps()))
-	var image_data = PackedByteArray(mipmaped_data) #Convert the 3d texture to bytes
-	var tex = rd.texture_create(format_data,RDTextureView.new(),[noise.get_data()]) #Create the texture on the RD end
-	var sampler_state = RDSamplerState.new() #no fucking clue what this is either xd
-	#sampler_state.unnormalized_uvw =
-	noise_buffer = rd.sampler_create(sampler_state) #something elseeeeeeeeeeee
 	
-	var tex_uni = RDUniform.new() #uniform shenaginry
-	tex_uni.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE #define details
-	tex_uni.binding = 3 #bind to slot 3
-	tex_uni.add_id(noise_buffer) #bind some stuffaroonies
-	tex_uni.add_id(tex) #bind some stuffaroonies
-	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform,tex_uni],shader,0) #I think the last param needs to match the set var in the comp shader? idk. This returns an RID we can use to acsess the uniform
+	
+	
+	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform,noisemap_uniform],shader,0) #I think the last param needs to match the set var in the comp shader? idk. This returns an RID we can use to acsess the uniform
 	
 	pipeline = rd.compute_pipeline_create(shader) #Make an instruction set for the GPU to execute
 
@@ -109,6 +114,7 @@ func run_compute():
 		var c_buffer = PackedFloat32Array([0]).to_byte_array()
 		rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
 
+		rd.texture_update(noisemap_rid,0,get_noise_data())
 		var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
 		rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
 		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. L17's 3rd arg must match this line's 3rd arg.
@@ -174,15 +180,23 @@ func release():
 	rd.free_rid(input_buffer)
 	rd.free_rid(counter_buffer);
 	rd.free_rid(shader)
-	rd.free_rid(noise_buffer)
+	rd.free_rid(noisemap_rid)
 	
 	pipeline = RID()
 	output_buffer = RID()
 	input_buffer = RID()
 	counter_buffer = RID()
 	shader = RID()
-	noise_buffer = RID()
+	noisemap_rid = RID()
 	
 		
 	rd.free()
 	rd= null
+
+
+func get_noise_data():
+	var out: PackedByteArray
+	if noise:
+		for i in noise.get_data():
+			out.append_array(i.get_data())
+	return out
