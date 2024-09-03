@@ -116,7 +116,7 @@ layout(set = 0, binding = 2, std430) coherent buffer Counter
 	uint counter;
 };
 
-layout(set = 0, binding = 3) uniform sampler3D noiseMap;
+// layout(set = 0, binding = 3) uniform sampler3D noiseMap;
 //layout(set = 0, binding = 1, std430) restrict buffer NoiseBuffer {
 //    sampler3D data;
 //}
@@ -423,8 +423,8 @@ void main() {
     
     for (int i = 0; i < cubeValues.length(); i++){
 		// cubeValues[i] = distance(cornerOffsets[i]+offset,sphere_pos);
-		cubeValues[i] = texture(noiseMap,cornerOffsets[i]+offset).r;
-        // cubeValues[i] = step(distance(cornerOffsets[i]+offset,sphere_pos),5.0)*snoise((cornerOffsets[i]+offset)/10);
+		// cubeValues[i] = texture(noiseMap,cornerOffsets[i]+offset).r;
+        cubeValues[i] = step(distance(cornerOffsets[i]+offset,sphere_pos),5.0)*snoise((cornerOffsets[i]+offset)/10);
     }
 
     if (cubeValues[0] < iso) cubeIndex |= 1;
