@@ -6,15 +6,19 @@ extends Node3D
 		iso = val
 		run_compute()
 
-@export var cubes = 8
 @export var res := 1
-@export var data_out: PackedFloat32Array
-@export var data_out_vec: PackedVector3Array
-@export var counter_out: PackedByteArray
+@export var sphere_pos: Vector3 = Vector3.ZERO:
+	set(val):
+		sphere_pos = val
+		run_compute()
+@export var noise: NoiseTexture3D
+var data_out: PackedFloat32Array
+var data_out_vec: PackedVector3Array
+var counter_out: PackedByteArray
 const max_tris_per_voxel : int = 5
-const max_triangles : int = max_tris_per_voxel * int(pow(8, 3))
+const max_triangles : int = max_tris_per_voxel * int(pow(10, 3))
 const bytes_per_float : int = 4
-const floats_per_triangle : int = 3 * 3
+const floats_per_triangle : int = 3 * 4
 const bytes_per_triangle : int = floats_per_triangle * bytes_per_float
 const max_bytes : int = bytes_per_triangle * max_triangles
 
@@ -22,9 +26,10 @@ var rd: RenderingDevice
 var shader: RID
 var pipeline: RID
 var uniform_set: RID
-var output_buffer
-var input_buffer
-var counter_buffer
+var output_buffer: RID
+var input_buffer: RID
+var counter_buffer: RID
+var noise_buffer: RID
 var is_ready = false
 # Called when the node enters the scene tree for the first time.
 
@@ -37,7 +42,7 @@ func prep_compute():
 	var shader_file := load("res://ComputeShader/computeMan.glsl") #Load shader file
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv() #Create intermediary SPIRV code we compile into the bytecode executed by the engine/OS
 	shader = rd.shader_create_from_spirv(shader_spirv) #Compile that SPIRV into a usable shader
-	var input := PackedFloat32Array([iso,cubes,res]) #Data
+	var input := PackedFloat32Array([iso,sphere_pos.x,sphere_pos.y,sphere_pos.z]) #Data
 	var input_as_bytes = input.to_byte_array() #Convert data to raw bytes
 	input_buffer = rd.storage_buffer_create(input_as_bytes.size(),input_as_bytes) #Create a buffer in the custom rendering device
 	var uniform = RDUniform.new() #Make new uniform so we can pass data to the GPU 
@@ -63,7 +68,24 @@ func prep_compute():
 	c_uniform.binding = 2
 	c_uniform.add_id(counter_buffer)
 	
+	var format_data = RDTextureFormat.new() #Data on the actual texture 
+	format_data.width = noise.width #yippee
+	format_data.height = noise.height #yippeeeeeeeeeeeee
+	format_data.depth = noise.depth #yipppeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+	format_data.usage_bits = RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT | RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT #idk what this is but uhhhhhhhhhhhhhhh xd (Tutorial here: https://forum.godotengine.org/t/compute-shader-sampler3d-uniform/4459)
+	format_data.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_SRGB #setting formats, TODO figure out how to make the shader accept lum8 maps as they only store one int per pixel instead of 4
 	
+	var image_data = PackedByteArray(noise.get_data()) #Convert the 3d texture to bytes
+	var tex = rd.texture_create(format_data,RDTextureView.new(),[noise.get_data()]) #
+	var sampler_state = RDSamplerState.new()
+	#sampler_state.unnormalized_uvw =
+	var sampler_final = rd.sampler_create(sampler_state)
+	
+	var tex_uni = RDUniform.new()
+	tex_uni.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
+	tex_uni.binding = 3
+	tex_uni.add_id(sampler_final)
+	tex_uni.add_id(tex)
 	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform],shader,0) #I think the last param needs to match the set var in the comp shader? idk. This returns an RID we can use to acsess the uniform
 	
 	pipeline = rd.compute_pipeline_create(shader) #Make an instruction set for the GPU to execute
@@ -76,7 +98,7 @@ func run_compute():
 		data_out.clear()
 		$MeshInstance3D.mesh.clear_surfaces()
 
-		var new_input_buffer = PackedFloat32Array([iso,cubes,res]).to_byte_array()
+		var new_input_buffer = PackedFloat32Array([iso,sphere_pos.x,sphere_pos.y,sphere_pos.z]).to_byte_array()
 		rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer)
 		var c_buffer = PackedFloat32Array([0]).to_byte_array()
 		rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
@@ -115,21 +137,25 @@ func process_output(data:PackedFloat32Array):
 		return
 	#var num_tris = 3
 	for i in range(0,num_tris):
-		var index = i*12
+		var index = i*16
 		var l = i
 		#if i != 0:
 			#l+=1
 		var posA = Vector3(data[index + 0], data[index + 1], data[index + 2])
 		var posB = Vector3(data[index + 4], data[index + 5], data[index + 6])
 		var posC = Vector3(data[index + 8], data[index + 9], data[index + 10])
+		surf.set_normal(Vector3(data[index + 12], data[index + 13], data[index + 14]))
 		surf.add_vertex(posA)
 		data_out_vec.append(posA)
+		surf.set_normal(Vector3(data[index + 12], data[index + 13], data[index + 14]))
 		surf.add_vertex(posB)
 		data_out_vec.append(posB)
+		surf.set_normal(Vector3(data[index + 12], data[index + 13], data[index + 14]))
 		surf.add_vertex(posC)
 		data_out_vec.append(posC)
+	
+	#surf.generate_normals()
 	surf.index()
-	surf.generate_normals()
 	surf.commit($MeshInstance3D.mesh)
 
 func _notification(type):
