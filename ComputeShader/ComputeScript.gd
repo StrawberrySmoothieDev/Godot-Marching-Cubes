@@ -1,15 +1,15 @@
 @tool
 extends Node3D
-
+@onready var tex_raster = $SubViewport
 @export var iso = 1.0:
 	set(val):
 		iso = val
 		run_compute()
 
 @export var res := 1
-@export var sphere_pos: Vector3 = Vector3.ZERO:
+@export var noise_scale: Vector3 = Vector3.ZERO:
 	set(val):
-		sphere_pos = val
+		noise_scale = val
 		run_compute()
 @export var noise: NoiseTexture3D:
 	set(val):
@@ -35,7 +35,8 @@ var uniform_set: RID
 var output_buffer: RID
 var input_buffer: RID
 var counter_buffer: RID
-var noisemap_rid: RID
+var noisemap_texture_rid: RID
+var noisemap_sampler: RID
 var is_ready = false
 # Called when the node enters the scene tree for the first time.
 
@@ -49,7 +50,7 @@ func prep_compute():
 	var shader_file := load("res://ComputeShader/computeMan.glsl") #Load shader file
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv() #Create intermediary SPIRV code we compile into the bytecode executed by the engine/OS
 	shader = rd.shader_create_from_spirv(shader_spirv) #Compile that SPIRV into a usable shader
-	var input := PackedFloat32Array([iso,sphere_pos.x,sphere_pos.y,sphere_pos.z]) #Data
+	var input := PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z]) #Data
 	var input_as_bytes = input.to_byte_array() #Convert data to raw bytes
 	input_buffer = rd.storage_buffer_create(input_as_bytes.size(),input_as_bytes) #Create a buffer in the custom rendering device
 	var uniform = RDUniform.new() #Make new uniform so we can pass data to the GPU 
@@ -75,22 +76,30 @@ func prep_compute():
 	c_uniform.binding = 2
 	c_uniform.add_id(counter_buffer)
 	
+	
+	
 	var noisemap_format_data := RDTextureFormat.new()
 	noisemap_format_data.width = noise.width
 	noisemap_format_data.height = noise.height
 	noisemap_format_data.depth = noise.depth
 	noisemap_format_data.texture_type = RenderingDevice.TEXTURE_TYPE_3D
 	noisemap_format_data.format = RenderingDevice.DATA_FORMAT_R8_UNORM
+	
 	noisemap_format_data.usage_bits = \
-			RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
-			RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
-			RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
-	noisemap_rid = rd.texture_create(noisemap_format_data,RDTextureView.new())
+			RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT + \
+			RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
+
+	noisemap_texture_rid = rd.texture_create(noisemap_format_data,RDTextureView.new())
+	var sampler_state = RDSamplerState.new()
+	
+	noisemap_sampler = rd.sampler_create(sampler_state)
 	
 	var noisemap_uniform := RDUniform.new()
-	noisemap_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	noisemap_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
 	noisemap_uniform.binding = 3
-	noisemap_uniform.add_id(noisemap_rid)
+	noisemap_uniform.add_id(noisemap_sampler)
+	noisemap_uniform.add_id(noisemap_texture_rid)
+	
 	
 	
 	
@@ -109,12 +118,12 @@ func run_compute():
 		data_out.clear()
 		$MeshInstance3D.mesh.clear_surfaces()
 
-		var new_input_buffer = PackedFloat32Array([iso,sphere_pos.x,sphere_pos.y,sphere_pos.z]).to_byte_array()
+		var new_input_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z]).to_byte_array()
 		rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer)
 		var c_buffer = PackedFloat32Array([0]).to_byte_array()
 		rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
 
-		rd.texture_update(noisemap_rid,0,get_noise_data())
+		print(str(rd.texture_update(noisemap_texture_rid,0,get_noise_data())))
 		var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
 		rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
 		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. L17's 3rd arg must match this line's 3rd arg.
@@ -180,23 +189,25 @@ func release():
 	rd.free_rid(input_buffer)
 	rd.free_rid(counter_buffer);
 	rd.free_rid(shader)
-	rd.free_rid(noisemap_rid)
-	
+	rd.free_rid(noisemap_texture_rid)
+	rd.free_rid(noisemap_sampler)
 	pipeline = RID()
 	output_buffer = RID()
 	input_buffer = RID()
 	counter_buffer = RID()
 	shader = RID()
-	noisemap_rid = RID()
-	
+	noisemap_texture_rid = RID()
+	noisemap_sampler = RID()
 		
 	rd.free()
 	rd= null
 
 
 func get_noise_data():
+
 	var out: PackedByteArray
 	if noise:
-		for i in noise.get_data():
+		#for i in noise.get_data():
+		for i in tex_raster.images:
 			out.append_array(i.get_data())
 	return out
