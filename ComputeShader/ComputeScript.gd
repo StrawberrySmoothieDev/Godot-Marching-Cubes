@@ -34,6 +34,7 @@ var is_ready = false
 # Called when the node enters the scene tree for the first time.
 
 func _ready() -> void:
+	await noise.changed
 	prep_compute()
 	is_ready = true
 
@@ -68,25 +69,30 @@ func prep_compute():
 	c_uniform.binding = 2
 	c_uniform.add_id(counter_buffer)
 	
+	
+	
+	
 	var format_data = RDTextureFormat.new() #Data on the actual texture 
-	format_data.width = noise.width #yippee
-	format_data.height = noise.height #yippeeeeeeeeeeeee
-	format_data.depth = noise.depth #yipppeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+	format_data.width = 64 #yippee
+	format_data.height = 64 #yippeeeeeeeeeeeee
+	format_data.depth = 64 #yipppeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 	format_data.usage_bits = RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT | RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT #idk what this is but uhhhhhhhhhhhhhhh xd (Tutorial here: https://forum.godotengine.org/t/compute-shader-sampler3d-uniform/4459)
-	format_data.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_SRGB #setting formats, TODO figure out how to make the shader accept lum8 maps as they only store one int per pixel instead of 4
-	
-	var image_data = PackedByteArray(noise.get_data()) #Convert the 3d texture to bytes
-	var tex = rd.texture_create(format_data,RDTextureView.new(),[noise.get_data()]) #
-	var sampler_state = RDSamplerState.new()
+	format_data.format = noise.get_format() #setting formats, TODO figure out how to make the shader accept lum8 maps as they only store one int per pixel instead of 4
+	var mipmaped_data = noise.get_data()
+	for i in mipmaped_data:
+		print(str(i.generate_mipmaps()))
+	var image_data = PackedByteArray(mipmaped_data) #Convert the 3d texture to bytes
+	var tex = rd.texture_create(format_data,RDTextureView.new(),[noise.get_data()]) #Create the texture on the RD end
+	var sampler_state = RDSamplerState.new() #no fucking clue what this is either xd
 	#sampler_state.unnormalized_uvw =
-	var sampler_final = rd.sampler_create(sampler_state)
+	noise_buffer = rd.sampler_create(sampler_state) #something elseeeeeeeeeeee
 	
-	var tex_uni = RDUniform.new()
-	tex_uni.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
-	tex_uni.binding = 3
-	tex_uni.add_id(sampler_final)
-	tex_uni.add_id(tex)
-	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform],shader,0) #I think the last param needs to match the set var in the comp shader? idk. This returns an RID we can use to acsess the uniform
+	var tex_uni = RDUniform.new() #uniform shenaginry
+	tex_uni.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE #define details
+	tex_uni.binding = 3 #bind to slot 3
+	tex_uni.add_id(noise_buffer) #bind some stuffaroonies
+	tex_uni.add_id(tex) #bind some stuffaroonies
+	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform,tex_uni],shader,0) #I think the last param needs to match the set var in the comp shader? idk. This returns an RID we can use to acsess the uniform
 	
 	pipeline = rd.compute_pipeline_create(shader) #Make an instruction set for the GPU to execute
 
@@ -168,12 +174,15 @@ func release():
 	rd.free_rid(input_buffer)
 	rd.free_rid(counter_buffer);
 	rd.free_rid(shader)
+	rd.free_rid(noise_buffer)
 	
 	pipeline = RID()
 	output_buffer = RID()
 	input_buffer = RID()
 	counter_buffer = RID()
 	shader = RID()
+	noise_buffer = RID()
+	
 		
 	rd.free()
 	rd= null
