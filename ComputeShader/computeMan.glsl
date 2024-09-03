@@ -97,7 +97,8 @@ float snoise(vec3 v)
 								dot(p2,x2), dot(p3,x3) ) );
 	}
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
+layout(local_size_x = 10, local_size_y = 10, local_size_z = 10) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
+//More info here: https://docs.godotengine.org/en/stable/tutorials/shaders/compute_shaders.html
 
 // A binding to the buffer we create in our script
 
