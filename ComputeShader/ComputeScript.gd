@@ -56,6 +56,15 @@ func _ready() -> void:
 	for i in get_children():
 		if i is MeshInstance3D:
 			i.mesh = i.mesh.duplicate()
+			#for l in i.get_children():
+				#l.queue_free()
+			if i.get_child_count() < 1:
+				var inst1 = StaticBody3D.new()
+				var inst2 = CollisionShape3D.new()
+				i.add_child(inst1)
+				inst1.add_child(inst2)
+				inst1.owner = self
+				inst2.owner = self
 	prep_compute()
 	is_ready = true
 
@@ -192,6 +201,7 @@ func process_output(data:PackedFloat32Array,mesh:MeshInstance3D) -> void: ##Take
 	surf.generate_normals()
 	surf.index() #attempts to merge identicle verts, but breaks bc they aren't exactly the same. I'll write a custom version soonish.
 	surf.commit(mesh.mesh) #Finishes the mesh, automatically updating $MeshInstance3D.mesh
+	mesh.get_child(0).get_child(0).shape = mesh.mesh.create_trimesh_shape()
 
 func _notification(type): ##IMPORTANT: Used to free refs to the rendering stuff on deletion. Without this, will result in a ton of memory leaks.
 	if type == NOTIFICATION_PREDELETE: #Need this conditon so we don't delete ourself when we recive any notification

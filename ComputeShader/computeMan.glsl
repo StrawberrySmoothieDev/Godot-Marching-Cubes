@@ -24,6 +24,14 @@ vec4 rndC(sampler3D samplerin,vec3 u) { //INCREDIBLY FAST Tricubic interpolation
 	U = floor(U) + F*F*F*(F*(F*6.-15.)+10.);   // use if you want smooth gradients
     return texture( samplerin, (U-.5) / R );
 }
+vec4 rndCMS(sampler3D samplerin,vec3 u) { //Slower, but smoother tricubic interp.
+    vec3 R = vec3(64),
+         U = u*R-.5,
+         F = fract(U); F = F*F*(3.-2.*F); // hermite spline 0->1 ( = smoothstep ).
+    #define T(x,y,t) texelFetch(samplerin, ivec3(mod( U +vec3(x,y,t), R)), 0)
+    return mix( mix( mix(T(0,0,0),T(1,0,0),F.x), mix(T(0,1,0),T(1,1,0),F.x), F.y ),
+                mix( mix(T(0,0,1),T(1,0,1),F.x), mix(T(0,1,1),T(1,1,1),F.x), F.y ), F.z );
+} 
 // from http://www.java-gaming.org/index.php?topic=35123.0
 vec4 cubic(float v){
     vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
@@ -400,8 +408,8 @@ void main() { //Main code block
     float[] cubeValues = {0,0,0,0,0,0,0,0}; //Values of each of the 8 vtexes in the cube
     
     for (int i = 0; i < cubeValues.length(); i++){ //itterate over all of them and calculate their values
-		// cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale);
-		cubeValues[i] = rndC(noiseMap,(cornerOffsets[i]+offset+offset_position)/noise_scale).r; //math oh ye gawds 
+		cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale);
+		// cubeValues[i] = rndCMS(noiseMap,(cornerOffsets[i]+offset+offset_position)/noise_scale).r; //math oh ye gawds 
     }
 
     if (cubeValues[0] > iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=

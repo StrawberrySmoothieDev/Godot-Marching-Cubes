@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://dmcodxd0xmay4"]
+
+[ext_resource type="Script" path="res://PlanetTesting/planetary_player.gd" id="1_ugm8n"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rkvpl"]
+
+[node name="PlanetaryPlayer" type="RigidBody3D"]
+script = ExtResource("1_ugm8n")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_rkvpl")
