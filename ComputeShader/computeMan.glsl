@@ -401,17 +401,17 @@ void main() { //Main code block
     
     for (int i = 0; i < cubeValues.length(); i++){ //itterate over all of them and calculate their values
 		// cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale);
-		cubeValues[i] = rndC(noiseMap,(cornerOffsets[i]+offset+offset_position)*noise_scale).r; //math oh ye gawds 
+		cubeValues[i] = rndC(noiseMap,(cornerOffsets[i]+offset+offset_position)/noise_scale).r; //math oh ye gawds 
     }
 
-    if (cubeValues[0] < iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=
-    if (cubeValues[1] < iso) cubeIndex |= 2;
-    if (cubeValues[2] < iso) cubeIndex |= 4;
-    if (cubeValues[3] < iso) cubeIndex |= 8;
-    if (cubeValues[4] < iso) cubeIndex |= 16;
-    if (cubeValues[5] < iso) cubeIndex |= 32;
-    if (cubeValues[6] < iso) cubeIndex |= 64;
-    if (cubeValues[7] < iso) cubeIndex |= 128;
+    if (cubeValues[0] > iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=
+    if (cubeValues[1] > iso) cubeIndex |= 2;
+    if (cubeValues[2] > iso) cubeIndex |= 4;
+    if (cubeValues[3] > iso) cubeIndex |= 8;
+    if (cubeValues[4] > iso) cubeIndex |= 16;
+    if (cubeValues[5] > iso) cubeIndex |= 32;
+    if (cubeValues[6] > iso) cubeIndex |= 64;
+    if (cubeValues[7] > iso) cubeIndex |= 128;
 
     int i = 0;
     int override = 500; //while loop override

@@ -53,6 +53,9 @@ var is_ready:bool = false ##j-j-j-j-j-jANK (var that stores if we're ready to pr
 
 func _ready() -> void:
 	#await noise.changed
+	for i in get_children():
+		if i is MeshInstance3D:
+			i.mesh = i.mesh.duplicate()
 	prep_compute()
 	is_ready = true
 
