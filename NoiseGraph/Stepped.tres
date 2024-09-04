@@ -1,0 +1,159 @@
+[gd_resource type="VisualShader" load_steps=19 format=3 uid="uid://brqspnhui3fkk"]
+
+[sub_resource type="VisualShaderNodeVectorOp" id="VisualShaderNodeVectorOp_2wu0v"]
+operator = 2
+
+[sub_resource type="VisualShaderNodeTexture3D" id="VisualShaderNodeTexture3D_rnufv"]
+source = 1
+
+[sub_resource type="VisualShaderNodeClamp" id="VisualShaderNodeClamp_fw7na"]
+output_port_for_preview = 0
+default_input_values = [0, Vector3(0, 0, 0), 1, Vector3(0, 0, 0), 2, Vector3(1, 1, 1)]
+op_type = 4
+
+[sub_resource type="Curve" id="Curve_mr33o"]
+_data = [Vector2(0.302037, 0), 0.0, 0.0, 0, 0, Vector2(0.312866, 1), 0.0, 0.0, 0, 0, Vector2(0.699108, 1), 0.0, 0.0, 0, 0, Vector2(0.753254, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_lwmpu"]
+curve = SubResource("Curve_mr33o")
+
+[sub_resource type="VisualShaderNodeCurveTexture" id="VisualShaderNodeCurveTexture_odbwb"]
+texture = SubResource("CurveTexture_lwmpu")
+
+[sub_resource type="VisualShaderNodeTexture3DParameter" id="VisualShaderNodeTexture3DParameter_jigni"]
+parameter_name = "Noise"
+
+[sub_resource type="VisualShaderNodeVectorDistance" id="VisualShaderNodeVectorDistance_q7l4q"]
+default_input_values = [0, Vector3(0, 0, 0), 1, Vector3(0.5, 0.5, 0.5)]
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_3gf7p"]
+expanded_output_ports = [0]
+input_name = "uv"
+
+[sub_resource type="VisualShaderNodeFloatParameter" id="VisualShaderNodeFloatParameter_ggyxx"]
+parameter_name = "Depth"
+
+[sub_resource type="VisualShaderNodeVectorCompose" id="VisualShaderNodeVectorCompose_qcb38"]
+
+[sub_resource type="Curve" id="Curve_lraxm"]
+_data = [Vector2(0.177727, 1), 0.0, 0.0, 0, 0, Vector2(0.227616, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_f8fj6"]
+curve = SubResource("Curve_lraxm")
+
+[sub_resource type="VisualShaderNodeCurveTexture" id="VisualShaderNodeCurveTexture_weavy"]
+texture = SubResource("CurveTexture_f8fj6")
+
+[sub_resource type="Curve" id="Curve_mkuf0"]
+_data = [Vector2(0.38044, 1), 0.0, 0.0, 0, 0, Vector2(0.418127, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_gw5ov"]
+curve = SubResource("Curve_mkuf0")
+
+[sub_resource type="VisualShaderNodeCurveTexture" id="VisualShaderNodeCurveTexture_f8dym"]
+texture = SubResource("CurveTexture_gw5ov")
+
+[sub_resource type="VisualShaderNodeVectorOp" id="VisualShaderNodeVectorOp_vxwwq"]
+output_port_for_preview = 0
+
+[resource]
+code = "shader_type canvas_item;
+render_mode blend_mix;
+
+uniform float Depth;
+uniform sampler2D curve_frg_7 : repeat_disable;
+uniform sampler2D curve_frg_8 : repeat_disable;
+uniform sampler3D Noise;
+uniform sampler2D curve_frg_14 : repeat_disable;
+
+
+
+void fragment() {
+// Input:4
+	vec2 n_out4p0 = UV;
+	float n_out4p1 = n_out4p0.r;
+	float n_out4p2 = n_out4p0.g;
+
+
+// FloatParameter:5
+	float n_out5p0 = Depth;
+
+
+// VectorCompose:6
+	vec3 n_out6p0 = vec3(n_out4p1, n_out4p2, n_out5p0);
+
+
+// Distance:3
+	vec3 n_in3p1 = vec3(0.50000, 0.50000, 0.50000);
+	float n_out3p0 = distance(n_out6p0, n_in3p1);
+
+
+// CurveTexture:7
+	float n_out7p0 = texture(curve_frg_7, vec2(n_out3p0)).r;
+
+
+// CurveTexture:8
+	float n_out8p0 = texture(curve_frg_8, vec2(n_out3p0)).r;
+
+
+	vec4 n_out11p0;
+// Texture3D:11
+	n_out11p0 = texture(Noise, n_out6p0);
+
+
+// CurveTexture:14
+	float n_out14p0 = texture(curve_frg_14, vec2(n_out11p0.x)).r;
+
+
+// VectorOp:10
+	vec3 n_out10p0 = vec3(n_out8p0) * vec3(n_out14p0);
+
+
+// Clamp:13
+	vec3 n_in13p1 = vec3(0.00000, 0.00000, 0.00000);
+	vec3 n_in13p2 = vec3(1.00000, 1.00000, 1.00000);
+	vec3 n_out13p0 = clamp(n_out10p0, n_in13p1, n_in13p2);
+
+
+// VectorOp:9
+	vec3 n_out9p0 = vec3(n_out7p0) + n_out13p0;
+
+
+// Output:0
+	COLOR.rgb = n_out9p0;
+
+
+}
+"
+graph_offset = Vector2(-194.829, 158.82)
+mode = 1
+flags/light_only = false
+nodes/fragment/0/position = Vector2(2140, 1340)
+nodes/fragment/2/node = SubResource("VisualShaderNodeTexture3DParameter_jigni")
+nodes/fragment/2/position = Vector2(580, -40)
+nodes/fragment/3/node = SubResource("VisualShaderNodeVectorDistance_q7l4q")
+nodes/fragment/3/position = Vector2(-140, 860)
+nodes/fragment/4/node = SubResource("VisualShaderNodeInput_3gf7p")
+nodes/fragment/4/position = Vector2(-1040, 500)
+nodes/fragment/5/node = SubResource("VisualShaderNodeFloatParameter_ggyxx")
+nodes/fragment/5/position = Vector2(-1040, 800)
+nodes/fragment/6/node = SubResource("VisualShaderNodeVectorCompose_qcb38")
+nodes/fragment/6/position = Vector2(-500, 500)
+nodes/fragment/7/node = SubResource("VisualShaderNodeCurveTexture_weavy")
+nodes/fragment/7/position = Vector2(120, 1180)
+nodes/fragment/8/node = SubResource("VisualShaderNodeCurveTexture_f8dym")
+nodes/fragment/8/position = Vector2(620, 740)
+nodes/fragment/9/node = SubResource("VisualShaderNodeVectorOp_vxwwq")
+nodes/fragment/9/position = Vector2(1780, 1240)
+nodes/fragment/10/node = SubResource("VisualShaderNodeVectorOp_2wu0v")
+nodes/fragment/10/position = Vector2(1100, 620)
+nodes/fragment/11/node = SubResource("VisualShaderNodeTexture3D_rnufv")
+nodes/fragment/11/position = Vector2(80, 220)
+nodes/fragment/13/node = SubResource("VisualShaderNodeClamp_fw7na")
+nodes/fragment/13/position = Vector2(1460, 500)
+nodes/fragment/14/node = SubResource("VisualShaderNodeCurveTexture_odbwb")
+nodes/fragment/14/position = Vector2(100, 540)
+nodes/fragment/connections = PackedInt32Array(4, 1, 6, 0, 4, 2, 6, 1, 5, 0, 6, 2, 6, 0, 3, 0, 3, 0, 7, 0, 7, 0, 9, 0, 8, 0, 10, 0, 2, 0, 11, 2, 6, 0, 11, 0, 10, 0, 13, 0, 13, 0, 9, 1, 3, 0, 8, 0, 9, 0, 0, 0, 11, 0, 14, 0, 14, 0, 10, 1)

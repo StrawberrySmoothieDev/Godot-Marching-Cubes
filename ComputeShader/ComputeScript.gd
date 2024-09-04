@@ -28,7 +28,7 @@ var data_out: PackedFloat32Array ##Floating point x,y,z positions of each vertex
 var data_out_vec: PackedVector3Array ##Vectorized version of above.
 var counter_out: PackedByteArray ##Counter array. Used to calculate the number of triangles in the mesh
 const max_tris_per_voxel : int = 5 ##Constant value due to how marching cubes is done. The most triangles in a single MCube voxel is 5.
-const max_triangles : int = max_tris_per_voxel * int(pow(10, 3)) ##Max triangles = max_tris_per_voxel * (the number of invocations^the number of dimentions) For more info on invocations, see comment ID:02 in the compute shader for more info.
+var max_triangles : int = max_tris_per_voxel * int(pow(10, 3))*pow(res,3) ##Max triangles = max_tris_per_voxel * (the number of invocations^the number of dimentions) For more info on invocations, see comment ID:02 in the compute shader for more info.
  
 const bytes_per_float : int = 4 ##We use 32 bit floats, and there are 8 bits in each byte. 32/8 = 4, therefore 4 bytes per float.
 
@@ -37,7 +37,7 @@ const floats_per_triangle : int = 3 * 4 ##Each triangle has 4 vectors each compo
 
 
 const bytes_per_triangle : int = floats_per_triangle * bytes_per_float ##number of floats per tri * bytes per float gives us the max amount of a space a triangle can take up in memory
-const max_bytes : int = bytes_per_triangle * max_triangles ##max bytes per tri * max tris gives us the max possible size of the mesh. We then use this to set the size of the output buffer to avoid malloc (memory acllocation) errors.
+var max_bytes : int = bytes_per_triangle * max_triangles ##max bytes per tri * max tris gives us the max possible size of the mesh. We then use this to set the size of the output buffer to avoid malloc (memory acllocation) errors.
 
 var rd: RenderingDevice ##Local rendering device used for just about everything. You can think of this as a """""virtual GPU""""" (but it's more like a virtual GPU interface)
 var shader: RID ##Compiled bytecode of the shader that is run on the GPU.
@@ -61,7 +61,7 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 	var shader_file := load("res://ComputeShader/computeMan.glsl") #Load shader file
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv() #Create intermediary SPIR-V code we compile into the bytecode executed by the engine/OS
 	shader = rd.shader_create_from_spirv(shader_spirv) #Compile that SPIRV into a usable shader
-	var input := PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z]) #Params for the shader
+	var input := PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,position.x,position.y,position.z]) #Params for the shader
 	var input_as_bytes = input.to_byte_array() #Convert data to raw bytes
 	input_buffer = rd.storage_buffer_create(input_as_bytes.size(),input_as_bytes) #Create a buffer in the custom rendering device
 	var uniform = RDUniform.new() #Make new uniform so we can pass data to the GPU
@@ -91,9 +91,11 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 	
 	
 	var noisemap_format_data := RDTextureFormat.new() #Make a metadata resource to store info on the image we use for the noise
-	noisemap_format_data.width = 64 #width
-	noisemap_format_data.height = 64 #hight
-	noisemap_format_data.depth = 64 #depth
+	noisemap_format_data.width = tex_raster.res #width
+	noisemap_format_data.height = tex_raster.res #hight
+	noisemap_format_data.depth = tex_raster.res #depth
+	noisemap_format_data.samples = RenderingDevice.TEXTURE_SAMPLES_1
+	
 	#These shouldn't be constants, will fix this soon
 	noisemap_format_data.texture_type = RenderingDevice.TEXTURE_TYPE_3D #Set flag to treat it as a 3d texture instead of just a big texture
 	noisemap_format_data.format = RenderingDevice.DATA_FORMAT_R8_UNORM #Set format to a single chanel, 8-bit normalized luminance map, saving a shit ton of time and memory
@@ -126,35 +128,36 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 
 func run_compute() -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
 	if is_ready: #J-J-J-J A N K (preventing it from attempting to generate when not all the resources are loaded)
-		data_out_vec.clear() #clear existing data
-		data_out.clear()  #clear existing data
-		$MeshInstance3D.mesh.clear_surfaces()  #clear existing mesh
+		for mesh in get_mesh_children():
+			data_out_vec.clear() #clear existing data
+			data_out.clear()  #clear existing data
+			mesh.mesh.clear_surfaces()  #clear existing mesh
 
-		var new_input_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z]).to_byte_array() #make new param data
-		rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer) #Update the existing param buffer w/the new data.
-		var c_buffer = PackedFloat32Array([0]).to_byte_array() #reset the counter buffer
-		rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
+			var new_input_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,mesh.position.x,mesh.position.y,mesh.position.z]).to_byte_array() #make new param data
+			rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer) #Update the existing param buffer w/the new data.
+			var c_buffer = PackedFloat32Array([0]).to_byte_array() #reset the counter buffer
+			rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
 
-		rd.texture_update(noisemap_texture_rid,0,get_noise_data()) #Update the noise texture incase it's changed
-		var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
-		rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
-		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. ID:03's 3rd arg must match this line's 3rd arg.
-		rd.compute_list_dispatch(compute_list,res,res,res) # ID:01 Defines how many instances we want to run (x*y*z, in this case 5). Due to the fact that the shader code spesifies 2 x iterations, we are in reality running 5 instances that each run twice, effectivly running 10 times.
-		rd.compute_list_end() #ends the instruction list
-		rd.submit() #Send the code to the GPU to execute
-		rd.sync() #Syncs the CPU and GPU. Minor preformance impact, try not to do this too much. Causes the CPU to wait for the GPU to finish processing. Generally you want to wait ~2-3 frames before syncing, that way the GPU and CPU can run in parallel.
-		
-		var output_bytes = rd.buffer_get_data(output_buffer) #Retrive the data from the shader
-		var output = output_bytes.to_float32_array() #convert to float32 array from raw bytes
-		data_out = output #Store the data
-		
-		counter_out = rd.buffer_get_data(counter_buffer) #Store counter garbage
-		
-		#print(str(output))
-		process_output(output) #Process the output!!
+			rd.texture_update(noisemap_texture_rid,0,get_noise_data()) #Update the noise texture incase it's changed
+			var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
+			rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
+			rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. ID:03's 3rd arg must match this line's 3rd arg.
+			rd.compute_list_dispatch(compute_list,res,res,res) # ID:01 Defines how many instances we want to run (x*y*z, in this case 5). Due to the fact that the shader code spesifies 2 x iterations, we are in reality running 5 instances that each run twice, effectivly running 10 times.
+			rd.compute_list_end() #ends the instruction list
+			rd.submit() #Send the code to the GPU to execute
+			rd.sync() #Syncs the CPU and GPU. Minor preformance impact, try not to do this too much. Causes the CPU to wait for the GPU to finish processing. Generally you want to wait ~2-3 frames before syncing, that way the GPU and CPU can run in parallel.
+			
+			var output_bytes = rd.buffer_get_data(output_buffer) #Retrive the data from the shader
+			var output = output_bytes.to_float32_array() #convert to float32 array from raw bytes
+			data_out = output #Store the data
+			
+			counter_out = rd.buffer_get_data(counter_buffer) #Store counter garbage
+			
+			#print(str(output))
+			process_output(output,mesh) #Process the output!!
 		
 
-func process_output(data:PackedFloat32Array) -> void: ##Takes in a set of ungrouped float coords and turns them into a mesh.
+func process_output(data:PackedFloat32Array,mesh:MeshInstance3D) -> void: ##Takes in a set of ungrouped float coords and turns them into a mesh.
 	
 	var surf = SurfaceTool.new() #SurfaceTool instance. We use this as it lets us quickly generate normals and indexes and is generally pain-free. Will proably replace soon.
 	surf.begin(Mesh.PRIMITIVE_TRIANGLES) #Start the mesh. Required b4 you start adding verts.
@@ -162,7 +165,7 @@ func process_output(data:PackedFloat32Array) -> void: ##Takes in a set of ungrou
 	
 	var num_tris = counter_out.to_int32_array()[0] #Figure out the number of triangles we need to itterate over
 	if !num_tris: #If there's no triangles
-		print("ERROR: num_tris failed to convert") #This is not always the case. This error will also be thrown if the chunk simply has no verts (ie it is empty)
+		#print("ERROR: num_tris failed to convert") #This is not always the case. This error will also be thrown if the chunk simply has no verts (ie it is empty)
 		return #End func to save processing time
 	#var num_tris = 3
 	for i in range(0,num_tris): #For all of the triangles
@@ -183,9 +186,9 @@ func process_output(data:PackedFloat32Array) -> void: ##Takes in a set of ungrou
 		surf.add_vertex(posC)
 		data_out_vec.append(posC)
 	
-	#surf.generate_normals()
+	surf.generate_normals()
 	surf.index() #attempts to merge identicle verts, but breaks bc they aren't exactly the same. I'll write a custom version soonish.
-	surf.commit($MeshInstance3D.mesh) #Finishes the mesh, automatically updating $MeshInstance3D.mesh
+	surf.commit(mesh.mesh) #Finishes the mesh, automatically updating $MeshInstance3D.mesh
 
 func _notification(type): ##IMPORTANT: Used to free refs to the rendering stuff on deletion. Without this, will result in a ton of memory leaks.
 	if type == NOTIFICATION_PREDELETE: #Need this conditon so we don't delete ourself when we recive any notification
@@ -219,3 +222,11 @@ func get_noise_data() -> PackedByteArray: ##Grabs the textures from the rastariz
 		for i in tex_raster.images: #for all the images
 			out.append_array(i.get_data()) #append their raw bytes to the array, making them into a 3D image
 	return out #return it
+
+
+func get_mesh_children():
+	var arr: Array[MeshInstance3D] = []
+	for i in get_children():
+		if i is MeshInstance3D:
+			arr.append(i)
+	return arr
