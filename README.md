@@ -1,5 +1,5 @@
 # Godot Marching Cubes
-A simple marching cubes implementation. WIP, meant to document my progress to make it a smidge easier for anyone else trying this, also so any people who want to can follow development.
+A simple marching cubes implementation. WIP, meant to document my progress to make it a smidge easier for anyone else trying this, also so any people who want to can follow development. DM or email me if you have any questions or want help working on your own version!
 
 ## More info
 Endless Abyss discord: https://discord.gg/P7HRGGn5PV
