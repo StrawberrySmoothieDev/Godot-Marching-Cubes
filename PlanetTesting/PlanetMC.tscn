@@ -1,22 +1,20 @@
-[gd_scene load_steps=7 format=3 uid="uid://ttddh57jw2k8"]
+[gd_scene load_steps=9 format=3 uid="uid://ttddh57jw2k8"]
 
 [ext_resource type="PackedScene" uid="uid://txos5a2b2g7l" path="res://ComputeShader/ComputeTest.tscn" id="1_ea62s"]
-[ext_resource type="PackedScene" uid="uid://bmhsfkhw0qrse" path="res://PlanetTesting/player_mark_2.tscn" id="2_0di2j"]
+[ext_resource type="Script" path="res://Freelookcamera.gd" id="2_emwhc"]
+[ext_resource type="Script" path="res://Planet/TeraformingTest.gd" id="3_3s6m2"]
+[ext_resource type="Script" path="res://PlanetTesting/DBGVIEW.gd" id="4_wekbb"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_kfu3u"]
-sky_top_color = Color(0, 0, 0, 1)
-sky_horizon_color = Color(0, 0, 0, 1)
-ground_bottom_color = Color(0, 0, 0, 1)
-ground_horizon_color = Color(0, 0, 0, 1)
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_qkkx3"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
 
-[sub_resource type="Sky" id="Sky_58wax"]
-sky_material = SubResource("ProceduralSkyMaterial_kfu3u")
+[sub_resource type="Sky" id="Sky_le4k5"]
+sky_material = SubResource("ProceduralSkyMaterial_qkkx3")
 
-[sub_resource type="Environment" id="Environment_dhah2"]
+[sub_resource type="Environment" id="Environment_64k7u"]
 background_mode = 2
-sky = SubResource("Sky_58wax")
-ambient_light_source = 2
-ambient_light_color = Color(0.294641, 0.294641, 0.294641, 1)
+sky = SubResource("Sky_le4k5")
 tonemap_mode = 2
 glow_enabled = true
 
@@ -25,14 +23,15 @@ radius = 38.298
 
 [node name="PlanetMc" type="Node3D"]
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_64k7u")
+
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.0139658, -0.816058, 0.577801, -0.0699064, -0.577241, -0.813576, 0.997456, -0.0290297, -0.0651093, 0, 0, 0)
 shadow_enabled = true
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_dhah2")
-
 [node name="ComputeTest" parent="." instance=ExtResource("1_ea62s")]
+unique_name_in_owner = true
 transform = Transform3D(40, 0, 0, 0, 40, 0, 0, 0, 40, 0, 0, 0)
 
 [node name="Area3D" type="Area3D" parent="ComputeTest"]
@@ -45,6 +44,15 @@ gravity_direction = Vector3(0, 0, 0)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ComputeTest/Area3D"]
 shape = SubResource("SphereShape3D_pb18l")
 
-[node name="PlayerMark2" parent="." instance=ExtResource("2_0di2j")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 505.626, 997.849, 1257.65)
-sped = 200.0
+[node name="FreeLookCamera" type="Camera3D" parent="."]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, -750.876)
+script = ExtResource("2_emwhc")
+
+[node name="RayCast3D" type="RayCast3D" parent="FreeLookCamera"]
+target_position = Vector3(0, 0, -10000)
+script = ExtResource("3_3s6m2")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+offset_right = 504.0
+offset_bottom = 504.0
+script = ExtResource("4_wekbb")

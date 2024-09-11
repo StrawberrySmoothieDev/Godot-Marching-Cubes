@@ -6,7 +6,8 @@ class_name MarchingCubesComputeManager
 ##The code you see here IS NOT responsible for the actual mesh generation. Instead, it's a handler script for a compute shader that actually generates the mesh.
 ##A compute shader is a special shader that runs math and other garbage on the GPU STUPIDLY fast. It does this by running the same calculation thousands of times in parrallel, something that GPUs can do really well unlike CPUS.
 
-@onready var tex_raster:SubViewport = $SubViewport ##Subviewport we use to turn shaders into 3d images, effectively allowing me to use visualshaders to generate noise
+@onready var tex_raster:Rasterizer = $SubViewport ##Subviewport we use to turn shaders into 3d images, effectively allowing me to use visualshaders to generate noise
+@onready var center_marker = $Marker3D
 @export var iso:float = 1.0: ##iso AKA the value that is compared to points sampled from the scalar feild to figure out where there's a mesh. TLDR if this is higher than the value of the noise at that point, the point is inside the mesh.
 	set(val): #setter function
 		iso = val #set the value
@@ -138,13 +139,42 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 
 
 
-func run_compute() -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
+func run_compute(child: MeshInstance3D = null) -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
 	if is_ready: #J-J-J-J A N K (preventing it from attempting to generate when not all the resources are loaded)
-		for mesh in get_mesh_children():
+		if !child:
+			for mesh in get_mesh_children():
+				data_out_vec.clear() #clear existing data
+				data_out.clear()  #clear existing data
+				mesh.mesh.clear_surfaces()  #clear existing mesh
+				mesh.get_child(0).get_child(0).shape = null
+				var new_input_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,mesh.position.x,mesh.position.y,mesh.position.z]).to_byte_array() #make new param data
+				rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer) #Update the existing param buffer w/the new data.
+				var c_buffer = PackedFloat32Array([0]).to_byte_array() #reset the counter buffer
+				rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
+
+				rd.texture_update(noisemap_texture_rid,0,get_noise_data()) #Update the noise texture incase it's changed
+				var compute_list = rd.compute_list_begin() #Starts "accepting" instructions (any funcs called between this and compute_list_end() are sent to the gpu kinda)
+				rd.compute_list_bind_compute_pipeline(compute_list,pipeline) #Binds the compute list to the pipeline, basically the pipeline is the "place" or "person" executing the compute list
+				rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) #Bind uniform to the compute list, giving it acsess to the uniform at runtime. ID:03's 3rd arg must match this line's 3rd arg.
+				rd.compute_list_dispatch(compute_list,res,res,res) # ID:01 Defines how many instances we want to run (x*y*z, in this case 5). Due to the fact that the shader code spesifies 2 x iterations, we are in reality running 5 instances that each run twice, effectivly running 10 times.
+				rd.compute_list_end() #ends the instruction list
+				rd.submit() #Send the code to the GPU to execute
+				rd.sync() #Syncs the CPU and GPU. Minor preformance impact, try not to do this too much. Causes the CPU to wait for the GPU to finish processing. Generally you want to wait ~2-3 frames before syncing, that way the GPU and CPU can run in parallel.
+				
+				var output_bytes = rd.buffer_get_data(output_buffer) #Retrive the data from the shader
+				var output = output_bytes.to_float32_array() #convert to float32 array from raw bytes
+				data_out = output #Store the data
+				
+				counter_out = rd.buffer_get_data(counter_buffer) #Store counter garbage
+				
+				#print(str(output))
+				process_output(output,mesh) #Process the output!!
+		else:
+			var mesh = child
 			data_out_vec.clear() #clear existing data
 			data_out.clear()  #clear existing data
 			mesh.mesh.clear_surfaces()  #clear existing mesh
-
+			mesh.get_child(0).get_child(0).shape = null
 			var new_input_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,mesh.position.x,mesh.position.y,mesh.position.z]).to_byte_array() #make new param data
 			rd.buffer_update(input_buffer,0,new_input_buffer.size(),new_input_buffer) #Update the existing param buffer w/the new data.
 			var c_buffer = PackedFloat32Array([0]).to_byte_array() #reset the counter buffer
@@ -167,7 +197,6 @@ func run_compute() -> void: ##Function to actually generate and build the mesh. 
 			
 			#print(str(output))
 			process_output(output,mesh) #Process the output!!
-		
 
 func process_output(data:PackedFloat32Array,mesh:MeshInstance3D) -> void: ##Takes in a set of ungrouped float coords and turns them into a mesh.
 	
@@ -200,8 +229,12 @@ func process_output(data:PackedFloat32Array,mesh:MeshInstance3D) -> void: ##Take
 	
 	surf.generate_normals()
 	surf.index() #attempts to merge identicle verts, but breaks bc they aren't exactly the same. I'll write a custom version soonish.
+	surf.optimize_indices_for_cache()
 	surf.commit(mesh.mesh) #Finishes the mesh, automatically updating $MeshInstance3D.mesh
-	mesh.get_child(0).get_child(0).shape = mesh.mesh.create_trimesh_shape()
+	if mesh.mesh.get_surface_count() <= 0:
+		mesh.get_child(0).get_child(0).shape = null
+	else:
+		mesh.get_child(0).get_child(0).shape = mesh.mesh.create_trimesh_shape()
 
 func _notification(type): ##IMPORTANT: Used to free refs to the rendering stuff on deletion. Without this, will result in a ton of memory leaks.
 	if type == NOTIFICATION_PREDELETE: #Need this conditon so we don't delete ourself when we recive any notification
@@ -233,7 +266,11 @@ func get_noise_data() -> PackedByteArray: ##Grabs the textures from the rastariz
 	if tex_raster: #if it even exists
 		#for i in noise.get_data():
 		for i in tex_raster.images: #for all the images
-			out.append_array(i.get_data()) #append their raw bytes to the array, making them into a 3D image
+			#assert(i is Image)
+			var temp = i.duplicate()
+			temp.flip_x()
+			out.append_array(temp.get_data()) #append their raw bytes to the array, making them into a 3D image
+	#out.reverse()
 	return out #return it
 
 
@@ -243,3 +280,35 @@ func get_mesh_children():
 		if i is MeshInstance3D:
 			arr.append(i)
 	return arr
+
+
+func terraform(pos:Vector3,mesh:MeshInstance3D):
+	var p_original = pos
+	#var l_pos = center_marker.to_local(pos)
+	#var g_pos = to_global(l_pos)
+	#pos = g_pos
+	#pos = l_pos*Vector3(1,-1,-1)
+	pos/=scale.x
+	#pos*=Vector3(-1,1,1)
+	#pos = pos.rotated(Vector3.UP,180)
+	for index in range(tex_raster.images.size()):
+		if abs((index)-pos.z) < 30:
+			var temp_img:Image = tex_raster.images[index]
+			for x in range(64):
+				for y in range(64):
+					var fixed_pos = Vector2(remap(x,0,64,-32,32),remap(y,0,64,-32,32))
+					if fixed_pos.distance_to(Vector2(pos.x,pos.y)) <= 3.0:
+						var oldpix = temp_img.get_pixelv(Vector2(x,y))
+						oldpix.v -= 0.4
+						temp_img.set_pixelv(Vector2i(x,y),oldpix)
+			tex_raster.images[index] = temp_img
+	mesh.material_override = mesh.material_override.duplicate()
+	mesh.material_override.albedo_color = Color("Red")
+	run_compute(mesh)
+	$Sprite3D.update_sprite()
+
+
+func index():
+	var mdt: MeshDataTool = MeshDataTool.new()
+	#mdt.
+	#for vert_array_index in range

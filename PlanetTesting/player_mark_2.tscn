@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://bmhsfkhw0qrse"]
+[gd_scene load_steps=8 format=3 uid="uid://bmhsfkhw0qrse"]
 
 [ext_resource type="Script" path="res://PlanetTesting/PlayerMark2.gd" id="1_aios1"]
+[ext_resource type="Script" path="res://PlanetTesting/DBGVIEW.gd" id="2_iqm6b"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_g8si6"]
 friction = 100.0
@@ -69,9 +70,10 @@ spot_range = 30.0
 spot_angle = 25.3099
 
 [node name="CrosshairChecker" type="RayCast3D" parent="CameraTransform/SecondaryTransform/Camera" groups=["CrosshairChecker"]]
-transform = Transform3D(0.33, 0, 0, 0, 0.33, 0, 0, 0, 0.33, 0, 0, -0.313491)
-target_position = Vector3(2.08165e-12, 2.08165e-12, -20)
+transform = Transform3D(0.33, 0, 0, 0, 0.33, 0, 0, 0, 0.33, 0, 0, -0.976345)
+target_position = Vector3(0, 0, -400)
 collision_mask = 11
+hit_back_faces = false
 collide_with_areas = true
 
 [node name="AimAdjustMarker" type="Marker3D" parent="CameraTransform/SecondaryTransform/Camera"]
@@ -96,3 +98,8 @@ one_shot = true
 [node name="InteractDelayTimer" type="Timer" parent="."]
 wait_time = 0.05
 one_shot = true
+
+[node name="TextureRect" type="TextureRect" parent="."]
+offset_right = 504.0
+offset_bottom = 504.0
+script = ExtResource("2_iqm6b")
