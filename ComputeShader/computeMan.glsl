@@ -280,13 +280,11 @@ const int edgeConnections[12][2] = { //Connections between corner points.
     { 4, 5 }, { 5, 6 }, { 6, 7 }, { 7, 4 },
     { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 }
     };
-float noise3D(vec3 p)
-{
+float noise3D(vec3 p){
     return fract(sin(dot(p, vec3(12.9898, 78.233, 128.852))) * 43758.5453) * 2.0 - 1.0;
 }
 
-float simplex3D(vec3 p)
-{
+float simplex3D(vec3 p){
     //3D simplex noise w/FBM, from Lallis: https://www.shadertoy.com/view/XtBGDG
     float f3 = 1.0 / 3.0;
     float s = (p.x + p.y + p.z) * f3;
@@ -413,8 +411,7 @@ float simplex3D(vec3 p)
     return 96.0 * (n0 + n1 + n2 + n3);
 }
 
-float fbm(vec3 p)
-{
+float fbm(vec3 p){
     float f;
     f = 0.50000 * simplex3D(p);
     p = p * 2.01;
