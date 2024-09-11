@@ -285,9 +285,9 @@ float noise3D(vec3 p)
 	return fract(sin(dot(p ,vec3(12.9898,78.233,128.852))) * 43758.5453)*2.0-1.0;
 }
 
-float simplex3D(vec3 p) //3D simplex noise w/FBM, from Lallis: https://www.shadertoy.com/view/XtBGDG
+float simplex3D(vec3 p)
 {
-	
+	 //3D simplex noise w/FBM, from Lallis: https://www.shadertoy.com/view/XtBGDG
 	float f3 = 1.0/3.0;
 	float s = (p.x+p.y+p.z)*f3;
 	int i = int(floor(p.x+s));
@@ -368,8 +368,7 @@ float simplex3D(vec3 p) //3D simplex noise w/FBM, from Lallis: https://www.shade
 		t3 *= t3;
 		n3 = t3 * t3 * dot(gr3, vec3(x3, y3, z3));
 	}
-	return 96.0*(n0+n1+n2+n3);
-	
+	return 96.0*(n0+n1+n2+n3);	
 }
 
 float fbm(vec3 p)
