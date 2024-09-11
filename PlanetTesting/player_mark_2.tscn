@@ -1,0 +1,105 @@
+[gd_scene load_steps=8 format=3 uid="uid://bmhsfkhw0qrse"]
+
+[ext_resource type="Script" path="res://PlanetTesting/PlayerMark2.gd" id="1_aios1"]
+[ext_resource type="Script" path="res://PlanetTesting/DBGVIEW.gd" id="2_iqm6b"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_g8si6"]
+friction = 100.0
+rough = true
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jou6l"]
+radius = 0.382
+height = 1.7
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_e3vh6"]
+radius = 0.38
+height = 1.7
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8pwb5"]
+size = Vector3(0.59, 0.21, 1.21)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_y7jjp"]
+margin = 0.0
+radius = 0.005
+
+[node name="PlayerMark2" type="RigidBody3D" groups=["Player"]]
+collision_layer = 9
+collision_mask = 9
+physics_material_override = SubResource("PhysicsMaterial_g8si6")
+can_sleep = false
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 2
+linear_damp = 3.0
+angular_damp = 4.0
+script = ExtResource("1_aios1")
+jump_force = 4.0
+hold_power = 300.0
+cam_rotation_amount = 0.05
+cam_rotation_max = 1.0
+weapon_sway_amount = 0.1
+weapon_rotation_amount = 0.01
+
+[node name="Body" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_jou6l")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_e3vh6")
+skeleton = NodePath("")
+
+[node name="CameraTransform" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.534652, 0)
+
+[node name="SecondaryTransform" type="Node3D" parent="CameraTransform"]
+
+[node name="Camera" type="Camera3D" parent="CameraTransform/SecondaryTransform" groups=["PlayerCamera"]]
+current = true
+far = 100000.0
+
+[node name="Area3D" type="Area3D" parent="CameraTransform/SecondaryTransform/Camera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, -0.121042, -1.54623)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CameraTransform/SecondaryTransform/Camera/Area3D"]
+shape = SubResource("BoxShape3D_8pwb5")
+
+[node name="SpotLight3D" type="SpotLight3D" parent="CameraTransform/SecondaryTransform/Camera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.43812)
+visible = false
+light_energy = 5.0
+spot_range = 30.0
+spot_angle = 25.3099
+
+[node name="CrosshairChecker" type="RayCast3D" parent="CameraTransform/SecondaryTransform/Camera" groups=["CrosshairChecker"]]
+transform = Transform3D(0.33, 0, 0, 0, 0.33, 0, 0, 0, 0.33, 0, 0, -0.976345)
+target_position = Vector3(0, 0, -400)
+collision_mask = 11
+hit_back_faces = false
+collide_with_areas = true
+
+[node name="AimAdjustMarker" type="Marker3D" parent="CameraTransform/SecondaryTransform/Camera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.08165e-12, 0.052087, -6.93723)
+
+[node name="AudioListener3D" type="AudioListener3D" parent="CameraTransform/SecondaryTransform/Camera"]
+current = true
+
+[node name="Area3D2" type="Area3D" parent="CameraTransform/SecondaryTransform/Camera" groups=["CameraCollider"]]
+collision_priority = 100.0
+priority = 1000
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CameraTransform/SecondaryTransform/Camera/Area3D2"]
+shape = SubResource("SphereShape3D_y7jjp")
+
+[node name="FrictionTimer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[node name="PlayerStatisticsAspect" type="Node" parent="."]
+
+[node name="InteractDelayTimer" type="Timer" parent="."]
+wait_time = 0.05
+one_shot = true
+
+[node name="TextureRect" type="TextureRect" parent="."]
+offset_right = 504.0
+offset_bottom = 504.0
+script = ExtResource("2_iqm6b")

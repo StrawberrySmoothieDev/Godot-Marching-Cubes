@@ -21,6 +21,7 @@ class_name Rasterizer
 		#terraform(debug)
 var is_rasterizing = false
 signal done_rasterizing
+var ind = 0
 func raster():
 	if !is_rasterizing:
 		is_rasterizing = true
@@ -48,3 +49,14 @@ func terraform(position:Vector3):
 			var temp_img:Image = images[index]
 			temp_img.set_pixelv(Vector2(position.x,position.y)/upscale,Color.WHITE)
 			
+			
+func _physics_process(delta: float) -> void:
+	if !Engine.is_editor_hint() and GlobalSignals.debug_view:
+		if ind < images.size():
+			GlobalSignals.debug_view.texture = ImageTexture.create_from_image(images[ind])
+			ind += 1
+		else:
+			ind = 0
+			GlobalSignals.debug_view.texture = ImageTexture.create_from_image(images[ind])
+		
+		

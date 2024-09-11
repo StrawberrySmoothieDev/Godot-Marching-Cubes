@@ -1,7 +1,7 @@
 extends Camera3D
 class_name FreeLookCamera
 # Modifier keys' speed multiplier
-const SHIFT_MULTIPLIER = 2.5
+const SHIFT_MULTIPLIER = 60
 const ALT_MULTIPLIER = 1.0 / SHIFT_MULTIPLIER
 
 
@@ -16,7 +16,7 @@ var _direction = Vector3(0.0, 0.0, 0.0)
 var _velocity = Vector3(0.0, 0.0, 0.0)
 var _acceleration = 30
 var _deceleration = -10
-var _vel_multiplier = 4
+var _vel_multiplier = 70
 
 # Keyboard state
 var _w = false
