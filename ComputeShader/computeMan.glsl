@@ -548,9 +548,9 @@ void main() { //Main code block
     float[] cubeValues = { 0, 0, 0, 0, 0, 0, 0, 0 }; //Values of each of the 8 vtexes in the cube
 
     for (int i = 0; i < cubeValues.length(); i++) { //itterate over all of them and calculate their values
-        // cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale);
-        cubeValues[i] = rndCMS(noiseMap, (cornerOffsets[i] + offset + offset_position) / noise_scale).r; //math oh ye gawds
-        // cubeValues[i] = simplex3D((cornerOffsets[i]+offset+offset_position)/noise_scale); //simplex
+        // cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale); //Generate from dist (sphere)
+        // cubeValues[i] = rndCMS(noiseMap, (cornerOffsets[i] + offset + offset_position) / noise_scale).r; //Generate from editor noise
+        cubeValues[i] = simplex3D((cornerOffsets[i]+offset+offset_position)/noise_scale); //Generate from simplex
     }
 
     if (cubeValues[0] > iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=
