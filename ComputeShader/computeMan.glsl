@@ -491,7 +491,7 @@ vec4 textureBicubic(sampler2D samplerin, vec2 texCoords) {
 }
 
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 10, local_size_y = 10, local_size_z = 10) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
 //More info here: https://docs.godotengine.org/en/stable/tutorials/shaders/compute_shaders.html
 
 // A binding to the buffer we create in our script
@@ -507,19 +507,25 @@ layout(set = 0, binding = 1, std430) restrict buffer TriBuffer {
 }
 tri_data_buffer;
 
-layout(set = 0, binding = 2, std430) coherent buffer Counter //coherent means something xd, probably needed for cross-invocation stuff
+layout(set = 0, binding = 2, std430) restrict coherent buffer Counter //coherent means something xd, probably needed for cross-invocation stuff
 {
     uint counter;
-};
+}
+counter_buffer;
 
-layout(set = 0, binding = 3) uniform sampler3D noiseMap; //Sampler for the noise.
+layout(set = 0, binding = 3, std430) restrict buffer DebugBuffer
+{
+    uint dbg[];
+}
+debug_buffer;
+// layout(set = 0, binding = 3) uniform sampler3D noiseMap; //Sampler for the noise.
 //layout(set = 0, binding = 1, std430) restrict buffer NoiseBuffer {
 //    sampler3D data;
 //}
 //noise_buffer;
 
 float distFromCenter(vec3 pos) { //currently unused func for getting the distance from the center.
-    return (distance(vec3(0., 0., 0.), pos));
+    return (distance(vec3(4., 4., 4.), pos));
 }
 
 vec3 interp(vec3 EV1, float VAV1, vec3 EV2, float VAV2, float iso) { //Function used to interpolate between 2 points on a Marching Cubes voxel. TLDR if point a has a higher strength, the vertex will be closer to point a. Just watch sebastian lague's video. (https://www.youtube.com/watch?v=vTMEdHcKgM4)
@@ -532,25 +538,35 @@ vec3 normal_calc(Tri triangle) { //Calculate the normal vector of a triangle.
     vec3 ac = triangle.c.xyz - triangle.a.xyz;
     return (-normalize(cross(ab, ac)));
 }
+float planet_noise_sample(vec3 p){
+    float dist = distFromCenter(p);
+    return fbm(p)+dist;
+}
 // The code we want to execute in each invocation
 void main() { //Main code block
-
+    
+    // float mult = float(cube_data_buffer.data[7]);
+    // if (mult == 2.0 && (abs(mod(float(counter_buffer.counter),2.0)) <= 0.01)) {
+    //     debug_buffer.dbg[0] += 1;
+    //     return;
+    // }
+    // mult = 1.0;
     vec3 offset_position = vec3(cube_data_buffer.data[4], cube_data_buffer.data[5], cube_data_buffer.data[6]);
-    vec3 offset = vec3(gl_GlobalInvocationID) + vec3(gl_WorkGroupID);
+    vec3 offset = (vec3(gl_GlobalInvocationID) + vec3(gl_WorkGroupID));
 
     // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups, we can use this to figure out which voxel we're calculating.
 
     float iso = cube_data_buffer.data[0]; //Extract the iso from the buffer
     vec3 noise_scale = vec3(cube_data_buffer.data[1], cube_data_buffer.data[2], cube_data_buffer.data[3]); //Extract the noise scale
     // cube_data_buffer.data[gl_GlobalInvocationID.x] *= 2.0;
-
+    
     int cubeIndex = 0; // Lookup index for the triangulation table above
     float[] cubeValues = { 0, 0, 0, 0, 0, 0, 0, 0 }; //Values of each of the 8 vtexes in the cube
 
     for (int i = 0; i < cubeValues.length(); i++) { //itterate over all of them and calculate their values
         // cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale); //Generate from dist (sphere)
         // cubeValues[i] = rndCMS(noiseMap, (cornerOffsets[i] + offset + offset_position) / noise_scale).r; //Generate from editor noise
-        cubeValues[i] = simplex3D((cornerOffsets[i]+offset+offset_position)/noise_scale); //Generate from simplex
+        cubeValues[i] = planet_noise_sample(((cornerOffsets[i])+offset+offset_position)/noise_scale); //Generate from simplex
     }
 
     if (cubeValues[0] > iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=
@@ -561,7 +577,7 @@ void main() { //Main code block
     if (cubeValues[5] > iso) cubeIndex |= 32;
     if (cubeValues[6] > iso) cubeIndex |= 64;
     if (cubeValues[7] > iso) cubeIndex |= 128;
-
+    
     int i = 0;
     int override = 500; //while loop override
     int edges[16] = triTable[cubeIndex]; //new edge array of length 16 = the tritable index we found (eg:{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1})
@@ -581,7 +597,7 @@ void main() { //Main code block
         triangle.b = offset + interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11], iso);
         triangle.c = offset + interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21], iso);
         triangle.normal = normal_calc(triangle);
-        uint index = atomicAdd(counter, uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
+        uint index = atomicAdd(counter_buffer.counter, uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
         tri_data_buffer.data[index] = triangle; //append to the data buffer
 
         i += 3; //to the next triangle
