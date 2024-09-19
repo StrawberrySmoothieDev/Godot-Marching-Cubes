@@ -448,47 +448,6 @@ vec4 rndCMS(sampler3D samplerin, vec3 u) { //Slower, but smoother tricubic inter
     return mix(mix(mix(T(0, 0, 0), T(1, 0, 0), F.x), mix(T(0, 1, 0), T(1, 1, 0), F.x), F.y),
         mix(mix(T(0, 0, 1), T(1, 0, 1), F.x), mix(T(0, 1, 1), T(1, 1, 1), F.x), F.y), F.z);
 }
-// from http://www.java-gaming.org/index.php?topic=35123.0
-vec4 cubic(float v) {
-    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
-    vec4 s = n * n * n;
-    float x = s.x;
-    float y = s.y - 4.0 * s.x;
-    float z = s.z - 4.0 * s.y + 6.0 * s.x;
-    float w = 6.0 - x - y - z;
-    return vec4(x, y, z, w) * (1.0 / 6.0);
-}
-
-vec4 textureBicubic(sampler2D samplerin, vec2 texCoords) {
-    vec2 texSize = vec2(64, 64);
-    vec2 invTexSize = 1.0 / texSize;
-
-    texCoords = texCoords * texSize - 0.5;
-
-    vec2 fxy = fract(texCoords);
-    texCoords -= fxy;
-
-    vec4 xcubic = cubic(fxy.x);
-    vec4 ycubic = cubic(fxy.y);
-
-    vec4 c = texCoords.xxyy + vec2(-0.5, +1.5).xyxy;
-
-    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
-    vec4 offset = c + vec4(xcubic.yw, ycubic.yw) / s;
-
-    offset *= invTexSize.xxyy;
-
-    vec4 sample0 = texture(samplerin, offset.xz);
-    vec4 sample1 = texture(samplerin, offset.yz);
-    vec4 sample2 = texture(samplerin, offset.xw);
-    vec4 sample3 = texture(samplerin, offset.yw);
-
-    float sx = s.x / (s.x + s.y);
-    float sy = s.z / (s.z + s.w);
-
-    return mix(
-        mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
-}
 
 // Invocations in the (x, y, z) dimension
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
@@ -507,11 +466,10 @@ layout(set = 0, binding = 1, std430) restrict buffer TriBuffer {
 }
 tri_data_buffer;
 
-layout(set = 0, binding = 2, std430) restrict coherent buffer Counter //coherent means something xd, probably needed for cross-invocation stuff
+layout(set = 0, binding = 2, std430) coherent buffer Counter //coherent means something xd, probably needed for cross-invocation stuff
 {
     uint counter;
-}
-counter_buffer;
+};
 
 layout(set = 0, binding = 3, std430) restrict buffer DebugBuffer
 {
@@ -525,7 +483,7 @@ debug_buffer;
 //noise_buffer;
 
 float distFromCenter(vec3 pos) { //currently unused func for getting the distance from the center.
-    return (distance(vec3(4., 4., 4.), pos));
+    return (distance(vec3(0., 0., 0.), pos));
 }
 
 vec3 interp(vec3 EV1, float VAV1, vec3 EV2, float VAV2, float iso) { //Function used to interpolate between 2 points on a Marching Cubes voxel. TLDR if point a has a higher strength, the vertex will be closer to point a. Just watch sebastian lague's video. (https://www.youtube.com/watch?v=vTMEdHcKgM4)
@@ -539,8 +497,8 @@ vec3 normal_calc(Tri triangle) { //Calculate the normal vector of a triangle.
     return (-normalize(cross(ab, ac)));
 }
 float planet_noise_sample(vec3 p){
-    float dist = distFromCenter(p);
-    return fbm(p)+dist;
+    // float dist = distFromCenter(p);
+    return fbm(p);
 }
 // The code we want to execute in each invocation
 void main() { //Main code block
@@ -597,9 +555,9 @@ void main() { //Main code block
         triangle.b = offset + interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11], iso);
         triangle.c = offset + interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21], iso);
         triangle.normal = normal_calc(triangle);
-        uint index = atomicAdd(counter_buffer.counter, uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
+        uint index = atomicAdd(counter, uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
         tri_data_buffer.data[index] = triangle; //append to the data buffer
-
+        
         i += 3; //to the next triangle
     }
     // Tri tri2;
