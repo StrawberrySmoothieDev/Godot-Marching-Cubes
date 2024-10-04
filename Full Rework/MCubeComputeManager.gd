@@ -1,46 +1,77 @@
 @tool
 extends Node
 class_name MCubeComputeMan
+
 @export var generate: bool:
 	set(val):
 		if is_ready:
-			run_compute(get_child(0))
+			recursive_compute()
+
 @export_category("Generation Parameters")
 @export var iso:float = 1.0:
 	set(val):
 		iso = val
 		if is_ready:
-			run_compute(get_child(0))
+			recursive_compute()
+@export var seed:float = 1.0:
+	set(val):
+		seed = val
+		if is_ready:
+			recursive_compute()
+@export var recursive_count:int = 1:
+	set(val):
+		recursive_count = val
+		if is_ready:
+			recursive_compute()
 @export var noise_scale:Vector3 = Vector3.ONE:
 	set(val):
 		noise_scale = val
 		if is_ready:
-			run_compute(get_child(0))
+			recursive_compute()
 @export var origin_position_offset: Vector3 = Vector3.ZERO:
 	set(val):
 		origin_position_offset = val
 		if is_ready:
-			run_compute(get_child(0))
+			recursive_compute()
+@export var clean_up_mesh: bool:
+	set(val):
+		clean_up_mesh = val
+		if is_ready:
+			recursive_compute()
+@export var should_save_data_as_image: bool = false
 @export_category("Compute Shader Info")
 @export var invocations:int = 8
+
 
 var rd: RenderingDevice ##Local rendering device used for just about everything. You can think of this as a """""virtual GPU""""" (but it's more like a virtual GPU interface)
 var compute_shader: RID ##Compiled bytecode of the shader that is run on the GPU.
 var r_pipeline: RID ##Rendering pipeline. Used to execute the shader and other shenanaginry.
-var uniform_set: RID ##Used to communicate between the CPU and GPU. 
+var uniform_set: RID ##Used to communicate between the CPU and GPU.
 var output_buffer: RID ##Ref to the output buffer, the GPU writes to this and we read it to get the mesh.
 var param_buffer: RID ##Param buffer, stores iso, scale, noise, etc to send to the GPU.
 var counter_buffer: RID ##Counter buffer. Stores the number of itterations that occured when generating, used to calculate the # of triangles.
 var debug_buffer: RID ##Debug output buffer.
+var point_data_buffer: RID
 var is_ready = false
 var start_time
 
+@export_category("Profiling Options")
+@export var should_profile:bool = false
+@export var use_arraymesh: bool = false
+@export var average_time_arraymesh: float
+@export var average_time_surfacetool: float
+@export var debug_buffer_out:PackedInt32Array
+@export var img_out: PackedByteArray
+@export var img_out_tex: Image
+
+var times_arraymesh: PackedFloat32Array
+var times_surfacetool: PackedFloat32Array
 
 
 
 
-@export var vertex_data: PackedFloat32Array
-@export var counter_data: int
+var vertex_data: PackedFloat32Array
+var counter_data: int
 class TriVertexData:
 	var position:Vector3
 	var normal:Vector3
@@ -51,8 +82,13 @@ class TriVertexData:
 		inst.normal = norm
 		return inst
 func _ready() -> void:
+	times_arraymesh.clear()
+	times_surfacetool.clear()
 	is_ready = true
 	prep_compute()
+	if !Engine.is_editor_hint():
+		#seed = randf_range(0,42069420)
+		recursive_compute()
 func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-V, pipeline, etc.
 	if rd == null:
 		rd = RenderingServer.create_local_rendering_device() #Extra rendering device we use to run the comp shader
@@ -61,7 +97,7 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 	compute_shader = rd.shader_create_from_spirv(shader_spirv) #Compile that SPIRV into a usable shader
 	
 	
-	var input := PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,origin_position_offset.x,origin_position_offset.y,origin_position_offset.z]) #Params for the shader
+	var input := PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,origin_position_offset.x,origin_position_offset.y,origin_position_offset.z,seed]) #Params for the shader
 	var input_as_bytes = input.to_byte_array() #Convert data to raw bytes
 	param_buffer = rd.storage_buffer_create(input_as_bytes.size(),input_as_bytes) #Create a buffer in the custom rendering device
 	var uniform = RDUniform.new() #Make new uniform so we can pass data to the GPU
@@ -94,17 +130,35 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 	dbg_uniform.add_id(debug_buffer)
 	#and freaking die
 	#https://www.youtube.com/decino
-	
-	
 
 	
+	var dataformat := RDTextureFormat.new()
+	dataformat.width = invocations
+	dataformat.height = invocations
+	dataformat.depth = invocations
+	dataformat.texture_type = RenderingDevice.TEXTURE_TYPE_3D
+	dataformat.format = RenderingDevice.DATA_FORMAT_R8_UNORM
+	#dataformat.usage_bits = \
+			#RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
+			#RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
+			#RenderingDevice.TEXTURE_USAGE_CPU_READ_BIT
+	dataformat.usage_bits = \
+			RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
+			RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
+			RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+	point_data_buffer = rd.texture_create(dataformat,RDTextureView.new())
+	var data_buffer_uniform = RDUniform.new()
+	data_buffer_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	data_buffer_uniform.binding = 4
+	data_buffer_uniform.add_id(point_data_buffer)
 	
 	
 	
 	
 	
 	
-	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform,dbg_uniform],compute_shader,0) #ID:03 Creates the uniform set and sends all them to the gpu. The 0 at the end spesifies the uniform set, matching the set values in the layouts/uniforms in the shader. XD
+	
+	uniform_set = rd.uniform_set_create([uniform,output_uniform,c_uniform,dbg_uniform,data_buffer_uniform],compute_shader,0) #ID:03 Creates the uniform set and sends all them to the gpu. The 0 at the end spesifies the uniform set, matching the set values in the layouts/uniforms in the shader. XD
 	
 	r_pipeline = rd.compute_pipeline_create(compute_shader) #Make an instruction set for the GPU to execute
 	
@@ -116,6 +170,7 @@ func kill_existing_compute():
 	rd.free_rid(param_buffer)
 	rd.free_rid(counter_buffer)
 	rd.free_rid(debug_buffer)
+	rd.free_rid(point_data_buffer)
 	
 
 func get_output_max_bytes():
@@ -128,29 +183,65 @@ func get_output_max_bytes():
 	return max_bytes
 
 
-func run_compute(target: MeshInstance3D) -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
+func recursive_compute(itterations: int = recursive_count,resolution:int = 8):
+	#target.mesh.clear_surfaces()
+	start_time = Time.get_ticks_msec()
+	for i in get_children():
+		i.mesh.clear_surfaces()
+		for x in range(itterations):
+			for y in range(itterations):
+				for z in range(itterations):
+					var offset = (Vector3(x,y,z)*resolution)+i.position
+					run_compute(i,false,offset)
+	if should_profile:
+		output_elapsed_time()
+func run_compute(target: MarchedMesh,erase_existing_mesh = true,offset_positon:Vector3 = Vector3.ZERO) -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
 	if is_ready: #J-J-J-J A N K (preventing it from attempting to generate when not all the resources are loaded)
 		#print("guh")
-		start_time = Time.get_ticks_msec()
-		vertex_data.clear()
-		target.mesh.clear_surfaces()
 		
-		var new_parameter_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,origin_position_offset.x,origin_position_offset.y,origin_position_offset.z]).to_byte_array()
-		rd.buffer_update(param_buffer,0,new_parameter_buffer.size(),new_parameter_buffer) 
+		if should_save_data_as_image:
+			if target.saved_point_data == null:
+				var bpd_array = [] #bipolar disorder array me fr
+				for i in range(invocations):
+					var inst = Image.create(invocations,invocations,false,Image.FORMAT_R8)
+					bpd_array.append(inst)
+				var base_p_data = ImageTexture3D.new()
+				base_p_data.create(Image.FORMAT_R8,invocations,invocations,invocations,false,bpd_array)
+				target.saved_point_data = base_p_data
+		
+		vertex_data.clear()
+		if erase_existing_mesh:
+			target.mesh.clear_surfaces()
+		var o_pos = origin_position_offset+offset_positon
+		var new_parameter_buffer = PackedFloat32Array([iso,noise_scale.x,noise_scale.y,noise_scale.z,o_pos.x,o_pos.y,o_pos.z,seed]).to_byte_array()
+		rd.buffer_update(param_buffer,0,new_parameter_buffer.size(),new_parameter_buffer)
 		var c_buffer = PackedInt32Array([0]).to_byte_array() #reset the counter buffer
 		rd.buffer_update(counter_buffer,0,c_buffer.size(),c_buffer)
 		rd.buffer_clear(debug_buffer,0,rd.buffer_get_data(debug_buffer).size())
-		var compute_list = rd.compute_list_begin() 
+		if should_save_data_as_image:
+			rd.texture_update(point_data_buffer,0,target.get_image_data())
+		var compute_list = rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(compute_list,r_pipeline)
-		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0) 
-		rd.compute_list_dispatch(compute_list,1,1,1) 
+		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0)
+		rd.compute_list_dispatch(compute_list,1,1,1)
 		rd.compute_list_end()
 		rd.submit()
 		rd.sync()
 		vertex_data = get_output_data()
 		counter_data = get_counter_data()
-		
-		output_to_mesh(vertex_data,counter_data,target)
+		if should_save_data_as_image:
+			img_out = rd.texture_get_data(point_data_buffer,0)
+			var img_data_array = []
+			for i in range(0,pow(invocations,3),64):
+				var slice = img_out.slice(i,i+64)
+				var img_out_tex = Image.create_from_data(8,8,false,Image.FORMAT_R8,slice)
+				img_data_array.append(img_out_tex)
+			target.saved_point_data = ImageTexture3D.new()
+			target.saved_point_data.create(Image.FORMAT_R8,8,8,8,false,img_data_array)
+		if use_arraymesh:
+			output_to_mesh_arraymesh(vertex_data,counter_data,target)
+		else:
+			output_to_mesh_surfacetool(vertex_data,counter_data,target,o_pos)
 		
 		
 func get_output_data():
@@ -163,7 +254,54 @@ func get_counter_data():
 	return output_bytes
 
 
-func output_to_mesh(data: PackedFloat32Array,counterin:int,mesh:MeshInstance3D):
+func output_to_mesh_surfacetool(data: PackedFloat32Array,counterin:int,mesh:MarchedMesh,offset:Vector3):
+	
+	var surf = SurfaceTool.new() #SurfaceTool instance. We use this as it lets us quickly generate normals and indexes and is generally pain-free. Will proably replace soon.
+	surf.begin(Mesh.PRIMITIVE_TRIANGLES) #Start the mesh. Required b4 you start adding verts.
+
+	var offset2 = offset - mesh.position
+	var num_tris = counterin #Figure out the number of triangles we need to itterate over
+	if !num_tris: #If there's no triangles
+		#print("ERROR: num_tris failed to convert") #This is not always the case. This error will also be thrown if the chunk simply has no verts (ie it is empty)
+		return #End func to save processing time
+	#var num_tris = 3
+	for i in range(0,num_tris): #For all of the triangles
+		var index = i*16 #Index = i*16, where 16 is the number of indexes each tri takes up.
+		#For some ungodly reason, each vec3 in the triangle struct takes up 4 indexes with the last one being a meaningless zero i have NO IDEA why this happens help
+		#This results in 4 indexes per vector * 4 vectors per tri = 16 indexes per tri
+
+		var posA = Vector3(data[index + 0], data[index + 1], data[index + 2])+offset2 #First position
+		var posB = Vector3(data[index + 4], data[index + 5], data[index + 6])+offset2 #Second pos, skipping data[index+3] because it's just always a 0
+		var posC = Vector3(data[index + 8], data[index + 9], data[index + 10])+offset2 #Third pos, skipping data[index+7] because it's just always a 0
+		surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14]))
+		surf.add_vertex(posC)
+		surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14]))
+		surf.add_vertex(posB)
+		surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14])) #this func sets the normal FOR THE NEXT VERTEX. This results in flat shading, as all vtexes in a face have the same normal.
+		surf.add_vertex(posA) #add vtex
+
+
+
+	if clean_up_mesh:
+		surf.generate_normals()
+		surf.index() #attempts to merge identicle verts, but breaks bc they aren't exactly the same. I'll write a custom version soonish.
+		surf.optimize_indices_for_cache()
+	#if mesh.mesh.get_surface_count() <= 0:
+		#mesh.get_child(0).get_child(0).shape = null
+	#else:
+		#mesh.get_child(0).get_child(0).shape = mesh.mesh.create_trimesh_shape()
+	
+	surf.commit(mesh.mesh) #Finishes the mesh, automatically updating $MeshInstance3D.mesh
+	if !Engine.is_editor_hint():
+		mesh.mesh_ready()
+	#if should_profile:
+		#var elapsed_time = Time.get_ticks_msec()-start_time
+		#var amnt_of_frame = (elapsed_time/16.666666666666667)
+		#times_surfacetool.append(elapsed_time)
+		#average_time_surfacetool = avgf(times_surfacetool)
+		#print("Elapsed MS: "+str(elapsed_time)+" Frames elapsed: "+ str(amnt_of_frame))
+	debug_buffer_out = rd.buffer_get_data(debug_buffer).to_int32_array()
+func output_to_mesh_arraymesh(data: PackedFloat32Array,counterin:int,mesh:MeshInstance3D):
 	
 	if !counterin: #If there's no triangles
 		#print("ERROR: num_tris failed to convert") #This is not always the case. This error will also be thrown if the chunk simply has no verts (ie it is empty)
@@ -238,9 +376,7 @@ func output_to_mesh(data: PackedFloat32Array,counterin:int,mesh:MeshInstance3D):
 	surf_array[Mesh.ARRAY_NORMAL] = new_norm_array
 	a_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,surf_array)
 	mesh.mesh = a_mesh
-	var elapsed_time = Time.get_ticks_msec()-start_time
-	var amnt_of_frame = (elapsed_time/16.666666666666667)
-	print("Elapsed MS: "+str(elapsed_time)+" Frames elapsed: "+ str(amnt_of_frame))
+
 
 
 func _notification(type): ##IMPORTANT: Used to free refs to the rendering stuff on deletion. Without this, will result in a ton of memory leaks.
@@ -254,6 +390,7 @@ func release() -> void: ##Function that frees the memory of all the RIDs we made
 	rd.free_rid(counter_buffer);
 	rd.free_rid(compute_shader)
 	rd.free_rid(debug_buffer)
+	rd.free_rid(point_data_buffer)
 	debug_buffer = RID()
 	#rd.free_rid(noisemap_texture_rid)
 	#rd.free_rid(noisemap_sampler)
@@ -262,6 +399,8 @@ func release() -> void: ##Function that frees the memory of all the RIDs we made
 	param_buffer = RID()
 	counter_buffer = RID()
 	compute_shader = RID()
+	point_data_buffer = RID()
+	
 	#noisemap_texture_rid = RID()
 	#noisemap_sampler = RID()
 		
@@ -278,3 +417,16 @@ func avg(array:Array):
 	for i in array:
 		t+=i
 	return t/array.size()
+
+func avgf(array:Array):
+	var t: float
+	for i in array:
+		t+=i
+	return t/array.size()
+
+func output_elapsed_time():
+	var elapsed_time = Time.get_ticks_msec()-start_time
+	var amnt_of_frame = (elapsed_time/16.666666666666667)
+	times_arraymesh.append(elapsed_time)
+	average_time_arraymesh = avgf(times_arraymesh)
+	print("Elapsed MS: "+str(elapsed_time)+" Frames elapsed: "+ str(amnt_of_frame))

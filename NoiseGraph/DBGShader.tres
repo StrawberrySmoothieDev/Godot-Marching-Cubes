@@ -1,4 +1,4 @@
-[gd_resource type="VisualShader" load_steps=16 format=3 uid="uid://ba6pof0674wfs"]
+[gd_resource type="VisualShader" load_steps=17 format=3 uid="uid://ba6pof0674wfs"]
 
 [sub_resource type="VisualShaderNodeVectorDistance" id="VisualShaderNodeVectorDistance_gvo8y"]
 
@@ -14,6 +14,8 @@ texture = SubResource("CurveTexture_2x4ga")
 
 [sub_resource type="VisualShaderNodeVectorCompose" id="VisualShaderNodeVectorCompose_yp51v"]
 default_input_values = [0, 0.69, 1, 0.28, 2, 0.5]
+
+[sub_resource type="VisualShaderNodeRemap" id="VisualShaderNodeRemap_majqn"]
 
 [sub_resource type="VisualShaderNodeFloatParameter" id="VisualShaderNodeFloatParameter_ij3ip"]
 parameter_name = "Depth"
@@ -139,4 +141,6 @@ nodes/fragment/11/node = SubResource("VisualShaderNodeCurveTexture_i6unl")
 nodes/fragment/11/position = Vector2(520, 560)
 nodes/fragment/12/node = SubResource("VisualShaderNodeVectorCompose_yp51v")
 nodes/fragment/12/position = Vector2(-280, 980)
-nodes/fragment/connections = PackedInt32Array(4, 0, 5, 0, 4, 1, 5, 1, 2, 0, 5, 2, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 6, 1, 6, 0, 8, 0, 8, 0, 9, 0, 9, 0, 0, 0, 10, 0, 11, 0, 11, 0, 9, 1, 5, 0, 10, 0, 12, 0, 10, 1)
+nodes/fragment/13/node = SubResource("VisualShaderNodeRemap_majqn")
+nodes/fragment/13/position = Vector2(682.677, -21.2374)
+nodes/fragment/connections = PackedInt32Array(4, 0, 5, 0, 4, 1, 5, 1, 2, 0, 5, 2, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 6, 1, 6, 0, 8, 0, 9, 0, 0, 0, 10, 0, 11, 0, 11, 0, 9, 1, 5, 0, 10, 0, 12, 0, 10, 1, 8, 0, 9, 0)

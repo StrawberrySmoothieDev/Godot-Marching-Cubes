@@ -1,5 +1,5 @@
 #[compute]
-#version 450
+#version 460
 //Above things are required to import this into godot.
 
 //   _  _   ___   ___   ___     ___   ___     ___    ___     _      ___    ___    _  _   ___
@@ -280,11 +280,26 @@ const int edgeConnections[12][2] = { //Connections between corner points.
     { 4, 5 }, { 5, 6 }, { 6, 7 }, { 7, 4 },
     { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 }
     };
-float noise3D(vec3 p){
+float noise3D(vec3 p,float seed){
     return fract(sin(dot(p, vec3(12.9898, 78.233, 128.852))) * 43758.5453) * 2.0 - 1.0;
+}   
+float map(float value, float inMin, float inMax, float outMin, float outMax) {
+  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);
 }
 
-float simplex3D(vec3 p){
+vec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {
+  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);
+}
+
+vec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {
+  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);
+}
+
+vec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {
+  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);
+}
+float simplex3D(vec3 p,float seed){
+    
     //3D simplex noise w/FBM, from Lallis: https://www.shadertoy.com/view/XtBGDG
     float f3 = 1.0 / 3.0;
     float s = (p.x + p.y + p.z) * f3;
@@ -374,10 +389,10 @@ float simplex3D(vec3 p){
     vec3 ijk2 = vec3(i + i2, j + j2, k + k2);
     vec3 ijk3 = vec3(i + 1, j + 1, k + 1);
 
-    vec3 gr0 = normalize(vec3(noise3D(ijk0), noise3D(ijk0 * 2.01), noise3D(ijk0 * 2.02)));
-    vec3 gr1 = normalize(vec3(noise3D(ijk1), noise3D(ijk1 * 2.01), noise3D(ijk1 * 2.02)));
-    vec3 gr2 = normalize(vec3(noise3D(ijk2), noise3D(ijk2 * 2.01), noise3D(ijk2 * 2.02)));
-    vec3 gr3 = normalize(vec3(noise3D(ijk3), noise3D(ijk3 * 2.01), noise3D(ijk3 * 2.02)));
+    vec3 gr0 = normalize(vec3(noise3D(ijk0,seed), noise3D(ijk0 * 2.01,seed), noise3D(ijk0 * 2.02,seed)));
+    vec3 gr1 = normalize(vec3(noise3D(ijk1,seed), noise3D(ijk1 * 2.01,seed), noise3D(ijk1 * 2.02,seed)));
+    vec3 gr2 = normalize(vec3(noise3D(ijk2,seed), noise3D(ijk2 * 2.01,seed), noise3D(ijk2 * 2.02,seed)));
+    vec3 gr3 = normalize(vec3(noise3D(ijk3,seed), noise3D(ijk3 * 2.01,seed), noise3D(ijk3 * 2.02,seed)));
 
     float n0 = 0.0;
     float n1 = 0.0;
@@ -411,17 +426,17 @@ float simplex3D(vec3 p){
     return 96.0 * (n0 + n1 + n2 + n3);
 }
 
-float fbm(vec3 p){
+float fbm(vec3 p,float seed){
     float f;
-    f = 0.50000 * simplex3D(p);
+    f = 0.50000 * simplex3D(p,seed);
     p = p * 2.01;
-    f += 0.25000 * simplex3D(p);
+    f += 0.25000 * simplex3D(p,seed);
     p = p * 2.02; //from iq
-    f += 0.12500 * simplex3D(p);
+    f += 0.12500 * simplex3D(p,seed);
     p = p * 2.03;
-    f += 0.06250 * simplex3D(p);
+    f += 0.06250 * simplex3D(p,seed);
     p = p * 2.04;
-    f += 0.03125 * simplex3D(p);
+    f += 0.03125 * simplex3D(p,seed);
     return f;
 }
 
@@ -476,11 +491,8 @@ layout(set = 0, binding = 3, std430) restrict buffer DebugBuffer
     uint dbg[];
 }
 debug_buffer;
-// layout(set = 0, binding = 3) uniform sampler3D noiseMap; //Sampler for the noise.
-//layout(set = 0, binding = 1, std430) restrict buffer NoiseBuffer {
-//    sampler3D data;
-//}
-//noise_buffer;
+
+layout(set = 0, binding = 4,r8) uniform image3D point_data_buffer; //Sampler for the noise.
 
 float distFromCenter(vec3 pos) { //currently unused func for getting the distance from the center.
     return (distance(vec3(0., 0., 0.), pos));
@@ -496,9 +508,11 @@ vec3 normal_calc(Tri triangle) { //Calculate the normal vector of a triangle.
     vec3 ac = triangle.c.xyz - triangle.a.xyz;
     return (-normalize(cross(ab, ac)));
 }
-float planet_noise_sample(vec3 p){
+float planet_noise_sample(vec3 p,float seed){
     // float dist = distFromCenter(p);
-    return fbm(p);
+    float base = distFromCenter(p);
+    float fbm_val = map(fbm(p,seed),0.,.5,-1.,1.)*seed;
+    return base+fbm_val;
 }
 // The code we want to execute in each invocation
 void main() { //Main code block
@@ -509,22 +523,31 @@ void main() { //Main code block
     //     return;
     // }
     // mult = 1.0;
+
     vec3 offset_position = vec3(cube_data_buffer.data[4], cube_data_buffer.data[5], cube_data_buffer.data[6]);
     vec3 offset = (vec3(gl_GlobalInvocationID) + vec3(gl_WorkGroupID));
 
     // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups, we can use this to figure out which voxel we're calculating.
-
+    float seed = cube_data_buffer.data[7];
     float iso = cube_data_buffer.data[0]; //Extract the iso from the buffer
     vec3 noise_scale = vec3(cube_data_buffer.data[1], cube_data_buffer.data[2], cube_data_buffer.data[3]); //Extract the noise scale
     // cube_data_buffer.data[gl_GlobalInvocationID.x] *= 2.0;
     
     int cubeIndex = 0; // Lookup index for the triangulation table above
     float[] cubeValues = { 0, 0, 0, 0, 0, 0, 0, 0 }; //Values of each of the 8 vtexes in the cube
-
+    float debug_sample =fbm(((cornerOffsets[0])+offset+offset_position)/noise_scale,seed);
+    if (debug_sample >debug_buffer.dbg[0]){
+        debug_buffer.dbg[0] = uint(debug_sample*100.);
+    }
+    if (debug_sample < debug_buffer.dbg[1]){
+        debug_buffer.dbg[1] = uint(abs(debug_sample*100.));
+    }
     for (int i = 0; i < cubeValues.length(); i++) { //itterate over all of them and calculate their values
         // cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale); //Generate from dist (sphere)
         // cubeValues[i] = rndCMS(noiseMap, (cornerOffsets[i] + offset + offset_position) / noise_scale).r; //Generate from editor noise
-        cubeValues[i] = planet_noise_sample(((cornerOffsets[i])+offset+offset_position)/noise_scale); //Generate from simplex
+        cubeValues[i] = planet_noise_sample(((cornerOffsets[i])+offset+offset_position)/noise_scale,seed); //Generate from simplex
+        imageStore(point_data_buffer,ivec3(gl_GlobalInvocationID+uvec3(cornerOffsets[i])),vec4(cubeValues[i]));
+        
     }
 
     if (cubeValues[0] > iso) cubeIndex |= 1; //more math shenanagins, basically =| is the same as +=
@@ -557,7 +580,6 @@ void main() { //Main code block
         triangle.normal = normal_calc(triangle);
         uint index = atomicAdd(counter, uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
         tri_data_buffer.data[index] = triangle; //append to the data buffer
-        
         i += 3; //to the next triangle
     }
     // Tri tri2;

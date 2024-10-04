@@ -89,10 +89,10 @@ func _physics_process(delta):
 		physics_material_override.friction = lerp(physics_material_override.friction,10.0,0.7*delta)
 	else:
 		physics_material_override.friction = 0.0
-	if Input.is_action_pressed("M1"):
-		look_checker.force_raycast_update()
-		var pos = look_checker.get_collision_point()
-		%ComputeTest.terraform(pos)
+	#if Input.is_action_pressed("M1"):
+		#look_checker.force_raycast_update()
+		#var pos = look_checker.get_collision_point()
+		#%ComputeTest.terraform(pos)
 	#var move_input = Input.get_vector("move_left","move_right","move_backward","move_forward")
 	#apply_central_force(Vector3(move_input.x,0.0,move_input.y))
 	
