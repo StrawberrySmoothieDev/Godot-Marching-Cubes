@@ -138,14 +138,11 @@ func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-
 	dataformat.depth = invocations
 	dataformat.texture_type = RenderingDevice.TEXTURE_TYPE_3D
 	dataformat.format = RenderingDevice.DATA_FORMAT_R8_UNORM
-	#dataformat.usage_bits = \
-			#RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
-			#RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
-			#RenderingDevice.TEXTURE_USAGE_CPU_READ_BIT
 	dataformat.usage_bits = \
 			RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
+			#RenderingDevice.TEXTURE_USAGE_CPU_READ_BIT + \ #For more info on this rat bastard see here (https://app.milanote.com/1SJ1Nd16j7xv2T?p=0ULmZcMVtYC) and look for the doc labled "CPU texture readback jank"
 			RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
-			RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+			RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT 
 	point_data_buffer = rd.texture_create(dataformat,RDTextureView.new())
 	var data_buffer_uniform = RDUniform.new()
 	data_buffer_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
