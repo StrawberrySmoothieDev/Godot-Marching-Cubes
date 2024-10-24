@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://cf33538ymmvw3"
+path="res://.godot/imported/computeManPreview.glsl-dedcee1e12835c430270e0433309b482.res"
+
+[deps]
+
+source_file="res://Full Rework/computeManPreview.glsl"
+dest_files=["res://.godot/imported/computeManPreview.glsl-dedcee1e12835c430270e0433309b482.res"]
+
+[params]
+

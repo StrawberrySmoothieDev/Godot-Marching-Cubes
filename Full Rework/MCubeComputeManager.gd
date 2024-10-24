@@ -39,6 +39,11 @@ class_name MCubeComputeMan
 		if is_ready:
 			recursive_compute()
 @export var should_save_data_as_image: bool = false
+@export var dimentions: Vector3 = Vector3.ONE:
+	set(val):
+		dimentions = val
+		if is_ready:
+			prep_meshes()
 @export_category("Compute Shader Info")
 @export var invocations:int = 8
 
@@ -89,10 +94,22 @@ func _ready() -> void:
 	if !Engine.is_editor_hint():
 		#seed = randf_range(0,42069420)
 		recursive_compute()
+	#for i in get_children():
+		##i.mesh = i.mesh.duplicate()
+		#i.position/=Vector3(8,8,8)
+		#i.position*=16
+		
+func prep_meshes():
+	for x in range(dimentions.x):
+		for y in range(dimentions.y):
+			for z in range(dimentions.z):
+				var inst = MarchedMesh.new()
+				add_child(inst)
 func prep_compute() -> void: ##Creates ALL the rendering garbage, buffers, SPIR-V, pipeline, etc.
 	if rd == null:
 		rd = RenderingServer.create_local_rendering_device() #Extra rendering device we use to run the comp shader
-	var shader_file := load("res://ComputeShader/computeMan.glsl") #Load shader file
+	var shader_file := load("res://Full Rework/computeManPreview.glsl") #Load shader file (preview)
+	#var shader_file := load("res://ComputeShader/computeMan.glsl") #Load shader file
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv() #Create intermediary SPIR-V code we compile into the bytecode executed by the engine/OS
 	compute_shader = rd.shader_create_from_spirv(shader_spirv) #Compile that SPIRV into a usable shader
 	
@@ -172,7 +189,7 @@ func kill_existing_compute():
 
 func get_output_max_bytes():
 	const max_tris_per_voxel : int = 5 ##Constant value due to how marching cubes is done. The most triangles in a single MCube voxel is 5.
-	var max_triangles : int = max_tris_per_voxel * int(pow(invocations, 3)) ##Max triangles = max_tris_per_voxel * (the number of invocations^the number of dimentions) For more info on invocations, see comment ID:02 in the compute shader for more info.
+	var max_triangles : int = max_tris_per_voxel * int(pow(invocations, 3))*recursive_count ##Max triangles = max_tris_per_voxel * (the number of invocations^the number of dimentions) For more info on invocations, see comment ID:02 in the compute shader for more info.
 	const bytes_per_float : int = 4 ##We use 32 bit floats, and there are 8 bits in each byte. 32/8 = 4, therefore 4 bytes per float.
 	const floats_per_triangle : int = 3 * 4 ##Each triangle has 4 vectors each composed of 3 floats, 3 for each of the verts and 1 for the normal direction.
 	const bytes_per_triangle : int = floats_per_triangle * bytes_per_float ##number of floats per tri * bytes per float gives us the max amount of a space a triangle can take up in memory
@@ -180,19 +197,20 @@ func get_output_max_bytes():
 	return max_bytes
 
 
-func recursive_compute(itterations: int = recursive_count,resolution:int = 8):
+func recursive_compute(itterations: int = recursive_count,resolution:int = invocations):
 	#target.mesh.clear_surfaces()
 	start_time = Time.get_ticks_msec()
 	for i in get_children():
 		i.mesh.clear_surfaces()
-		for x in range(itterations):
-			for y in range(itterations):
-				for z in range(itterations):
-					var offset = (Vector3(x,y,z)*resolution)+i.position
-					run_compute(i,false,offset)
+		run_compute(i,false,i.position,recursive_count)
+		#for x in range(itterations):
+			#for y in range(itterations):
+				#for z in range(itterations):
+					#var offset = (Vector3(x,y,z)*resolution)+i.position
+					#run_compute(i,false,offset)
 	if should_profile:
 		output_elapsed_time()
-func run_compute(target: MarchedMesh,erase_existing_mesh = true,offset_positon:Vector3 = Vector3.ZERO) -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
+func run_compute(target: MarchedMesh,erase_existing_mesh = true,offset_positon:Vector3 = Vector3.ZERO,workgroups:int = 1) -> void: ##Function to actually generate and build the mesh. Automatically calls process_output().
 	if is_ready: #J-J-J-J A N K (preventing it from attempting to generate when not all the resources are loaded)
 		#print("guh")
 		
@@ -220,7 +238,7 @@ func run_compute(target: MarchedMesh,erase_existing_mesh = true,offset_positon:V
 		var compute_list = rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(compute_list,r_pipeline)
 		rd.compute_list_bind_uniform_set(compute_list,uniform_set,0)
-		rd.compute_list_dispatch(compute_list,1,1,1)
+		rd.compute_list_dispatch(compute_list,workgroups,workgroups,workgroups)
 		rd.compute_list_end()
 		rd.submit()
 		rd.sync()
@@ -266,16 +284,18 @@ func output_to_mesh_surfacetool(data: PackedFloat32Array,counterin:int,mesh:Marc
 		var index = i*16 #Index = i*16, where 16 is the number of indexes each tri takes up.
 		#For some ungodly reason, each vec3 in the triangle struct takes up 4 indexes with the last one being a meaningless zero i have NO IDEA why this happens help
 		#This results in 4 indexes per vector * 4 vectors per tri = 16 indexes per tri
-
-		var posA = Vector3(data[index + 0], data[index + 1], data[index + 2])+offset2 #First position
-		var posB = Vector3(data[index + 4], data[index + 5], data[index + 6])+offset2 #Second pos, skipping data[index+3] because it's just always a 0
-		var posC = Vector3(data[index + 8], data[index + 9], data[index + 10])+offset2 #Third pos, skipping data[index+7] because it's just always a 0
-		surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14]))
-		surf.add_vertex(posC)
-		surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14]))
-		surf.add_vertex(posB)
-		surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14])) #this func sets the normal FOR THE NEXT VERTEX. This results in flat shading, as all vtexes in a face have the same normal.
-		surf.add_vertex(posA) #add vtex
+		if index < data.size():
+			var posA = Vector3(data[index + 0], data[index + 1], data[index + 2])+offset2 #First position
+			var posB = Vector3(data[index + 4], data[index + 5], data[index + 6])+offset2 #Second pos, skipping data[index+3] because it's just always a 0
+			var posC = Vector3(data[index + 8], data[index + 9], data[index + 10])+offset2 #Third pos, skipping data[index+7] because it's just always a 0
+			surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14]))
+			surf.add_vertex(posC)
+			surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14]))
+			surf.add_vertex(posB)
+			surf.set_normal(-Vector3(data[index + 12], data[index + 13], data[index + 14])) #this func sets the normal FOR THE NEXT VERTEX. This results in flat shading, as all vtexes in a face have the same normal.
+			surf.add_vertex(posA) #add vtex
+		else:
+			print("Overflow!")
 
 
 

@@ -531,7 +531,7 @@ vec4 rndCMS(sampler3D samplerin, vec3 u) { //Slower, but smoother tricubic inter
 }
 
 // Invocations in the (x, y, z) dimension
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; //ID:02: We run the shader 10^3 times. These are invocations, which are seperate from workgroups. For each workgroup, we run 10^3 invocations, so if we had 10^3 workgroups, we would have (10^3)*(10^3) invocations total.
 //More info here: https://docs.godotengine.org/en/stable/tutorials/shaders/compute_shaders.html
 
 // A binding to the buffer we create in our script
@@ -591,13 +591,13 @@ void main() { //Main code block
     // }
     // mult = 1.0;
 
-    vec3 offset_position = vec3(cube_data_buffer.data[4], cube_data_buffer.data[5], cube_data_buffer.data[6]);
+    vec3 offset_position = vec3(cube_data_buffer.data[4], cube_data_buffer.data[5], cube_data_buffer.data[6])/2.;
     vec3 offset = (vec3(gl_GlobalInvocationID));
 
     // gl_GlobalInvocationID.x uniquely identifies this invocation across all work groups, we can use this to figure out which voxel we're calculating.
     float seed = cube_data_buffer.data[7];
     float iso = cube_data_buffer.data[0]; //Extract the iso from the buffer
-    vec3 noise_scale = vec3(cube_data_buffer.data[1], cube_data_buffer.data[2], cube_data_buffer.data[3]); //Extract the noise scale
+    vec3 noise_scale = vec3(cube_data_buffer.data[1], cube_data_buffer.data[2], cube_data_buffer.data[3])/2.; //Extract the noise scale
     // cube_data_buffer.data[gl_GlobalInvocationID.x] *= 2.0;
     
     int cubeIndex = 0; // Lookup index for the triangulation table above
@@ -644,6 +644,9 @@ void main() { //Main code block
         triangle.a = offset + interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01], iso);
         triangle.b = offset + interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11], iso);
         triangle.c = offset + interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21], iso);
+        triangle.a = triangle.a*2.;
+        triangle.b = triangle.b*2.;
+        triangle.c = triangle.c*2.;
         triangle.normal = normal_calc(triangle);
         uint index = atomicAdd(counter, uint(1)); //Atomic add basically adds them after this invocation is over, and returns the existing value now. Used to prevent multithreading from fucking things up.
         tri_data_buffer.data[index] = triangle; //append to the data buffer
