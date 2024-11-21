@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://3wgv7eon2gox"]
+
+[ext_resource type="Shader" path="res://Prototype.gdshader" id="1_hduf5"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_hduf5")
+shader_parameter/lightColor = Color(0.215686, 0.443137, 1, 1)
+shader_parameter/darkColor = Color(0.2, 0.2, 0.776471, 1)
+shader_parameter/borderColor = Color(1, 1, 1, 1)
+shader_parameter/gridSize = 4.0
+shader_parameter/val1 = 2.0
+shader_parameter/val2 = 0.5

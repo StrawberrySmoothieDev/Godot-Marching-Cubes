@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://dyx286wg51qin"]
+
+[ext_resource type="Shader" path="res://ThreadedTesting/WireframeDebug.gdshader" id="1_7a13m"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vshsg"]
+render_priority = 0
+shader = ExtResource("1_7a13m")
+shader_parameter/modelColor = Color(0, 0, 0, 0)
+shader_parameter/wireframeColor = Color(0, 1, 0.283333, 1)
+shader_parameter/width = 6.117
+shader_parameter/modelOpacity = 0.0
+shader_parameter/filtered = false
+
+[sub_resource type="BoxMesh" id="BoxMesh_uslfp"]
+
+[node name="DebugOutline" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
+material_override = SubResource("ShaderMaterial_vshsg")
+mesh = SubResource("BoxMesh_uslfp")
+skeleton = NodePath("../..")

@@ -1,4 +1,4 @@
-#@tool
+@tool
 extends Resource
 class_name GenerationData
 signal chunkdata_changed
@@ -29,6 +29,10 @@ signal chunkdata_changed
 	set(val):
 		base_res = val
 		changed.emit()
+@export var noise_power: float = 1.0:
+	set(val):
+		noise_power = val
+		changed.emit()
 
 @export var indexed: bool = true:
 	set(val):
@@ -39,7 +43,7 @@ signal chunkdata_changed
 	set(val):
 		sphereCenter = val
 		changed.emit()
-		
+@export var full_debug = false
 var points = []
 func update_mesh():
 	changed.emit()
@@ -53,5 +57,5 @@ func get_noise(pos: Vector3):
 		for i in points:
 			dist = min(pos.distance_to(i),dist)
 	else:
-		dist = pos.distance_to(sphereCenter)
+		dist = pos.distance_to(sphereCenter) + (noise.noise.get_noise_3dv(pos)*noise_power)
 	return dist

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://MeshTest/GenerationData.gd" id="1_x4bet"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_3ne1e"]
-frequency = 0.019
+frequency = 0.015
 
 [sub_resource type="NoiseTexture3D" id="NoiseTexture3D_n3hj3"]
 noise = SubResource("FastNoiseLite_3ne1e")
@@ -11,9 +11,9 @@ noise = SubResource("FastNoiseLite_3ne1e")
 [resource]
 script = ExtResource("1_x4bet")
 noise = SubResource("NoiseTexture3D_n3hj3")
-iso = 25.0
-cubes_per_chunk = 16
+iso = 3.79
+cubes_per_chunk = 1
 chunks = Vector3i(4, 4, 4)
 base_res = 1.0
 indexed = true
-sphereCenter = Vector3(16.93, 17, 15)
+sphereCenter = Vector3(0, 0, 0)

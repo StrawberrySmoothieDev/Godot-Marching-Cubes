@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://m26aevsp1ygn"]
+
+[ext_resource type="Script" path="res://ThreadedTesting/mt_test.gd" id="1_5nme0"]
+
+[node name="MtTest" type="Node3D"]
+script = ExtResource("1_5nme0")

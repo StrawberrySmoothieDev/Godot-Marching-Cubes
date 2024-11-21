@@ -98,7 +98,6 @@ func _physics_process(delta):
 	
 func _input(event):
 	look_checker.force_raycast_update()
-	var col2 = look_checker.get_collider()
 
 	if Input.is_action_just_pressed("Zoom"):
 
@@ -131,7 +130,6 @@ func _integrate_forces(state:PhysicsDirectBodyState3D):
 		state.transform = tp_to_transform
 		tp_to_transform = null
 	elif gravity_correct:
-		var force2 = Input.get_action_strength("move_right")-Input.get_action_strength("move_left")
 		var gravity_vec = state.total_gravity
 		if gravity_vec == Vector3.ZERO or gravity_vec == Vector3.DOWN:
 			gravity_vec = Vector3(0,-1,0)

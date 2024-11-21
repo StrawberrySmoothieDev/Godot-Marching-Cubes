@@ -1,126 +1,13 @@
-#@tool
+@tool
+extends Node
 
-extends MeshInstance3D
-class_name MarchedCube
-
-@export var isoLevel = 1
-@onready var p0 = $"X1(0)"
-@onready var p1 = $"Y1(1)"
-@onready var p2 = $"Z1(2)"
-@onready var p3 = $"W1(3)"
-
-@onready var p4 = $"X2(4)"
-@onready var p5 = $"Y2(5)"
-@onready var p6 = $"Z2(6)"
-@onready var p7 = $"W2(7)"
-var generating = false
-signal done_generating
-@export var save_values = false
-var saved_points_dict: Dictionary
-@export var dbg = false
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	mesh = mesh.duplicate(true)
-	#print_rich("[image]res://icon.svg[/image]")
-	#print(error_string(ERR_#printER_ON_FIRE))
-	
-
-
-func update_mesh(data:GenerationData):
-	generating = true
-	isoLevel = data.iso
-	var res = data.base_res
-	var cubes = data.cubes_per_chunk
-	var meshinst: ArrayMesh = mesh
-	mesh.clear_surfaces()
-	var surf_array = []
-	surf_array.resize(meshinst.ARRAY_MAX)
-	var verts = PackedVector3Array()
-	var normals = PackedVector3Array()
-	var indexes = PackedInt32Array()
-	var cubeIndex = 0;
-	var cubeValues = [0,0,0,0,0,0,0,0]
-	var index = 0
-	for x in range(0,cubes/res):
-		for y in range(0,cubes/res):
-			for z in range(0,cubes/res):
-				if dbg:
-					print("Generated")
-				var offset = Vector3(x,y,z)*res
-
-				if save_values:
-					for i in range(0,8):
-						cubeValues[i] = saved_points_dict[str(((offset+Vector3(cornerOffsetsVec[i]))+(position)))]
-				else:
-					for i in range(0,8):
-						cubeValues[i] = remap(data.get_noise((offset+Vector3(cornerOffsetsVec[i])*res)+(position)),0,1,-1,1)
-						saved_points_dict[str((offset+Vector3(cornerOffsetsVec[i]))+(position))] = cubeValues[i]
-						
-				
-				if (cubeValues[0] < isoLevel): cubeIndex |= 1 #wha
-				if (cubeValues[1] < isoLevel): cubeIndex |= 2
-				if (cubeValues[2] < isoLevel): cubeIndex |= 4
-				if (cubeValues[3] < isoLevel): cubeIndex |= 8
-				if (cubeValues[4] < isoLevel): cubeIndex |= 16
-				if (cubeValues[5] < isoLevel): cubeIndex |= 32
-				if (cubeValues[6] < isoLevel): cubeIndex |= 64
-				if (cubeValues[7] < isoLevel): cubeIndex |= 128 #hhhhhhhhhhhhh
-
-				var edges = triTable[cubeIndex] 
-				var i = 0
-				var override = 1000 #oop
-				while edges[i] != -1 and override > 0:
-					override -=1
-					
-					var e00 = edgeConnections[edges[i]][0] #0 Basically we pull an index from the data we got from the tritable and use that to look at a certain index of edgeconnections, with the two indexes in edgeconnections being the 2 verticies of the edge
-					var e01 = edgeConnections[edges[i]][1] #1
-					#First edge is between vertexes 0 and 1
-					var e10 = edgeConnections[edges[i + 1]][0] #3
-					var e11 = edgeConnections[edges[i + 1]][1] #0
-					#Second edge is between vertexes 3 and 0
-
-					var e20 = edgeConnections[edges[i + 2]][0] #0
-					var e21 = edgeConnections[edges[i + 2]][1] #4
-					#Third edge is between vertexes 0 and 4
-					
-					
-					
-					var tri = []
-					#print(str(interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01])))
-					tri.append((offset)+(res*interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01]))) #append the thinggggggggggggggggggggggggggs
-					tri.append((offset)+(res*interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11])))
-					tri.append((offset)+(res*interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21])))
-					verts.append_array(tri)
-					i+=3
-				if override <= 0:
-					print_debug("Hit while maximum") #krill me
-				cubeIndex = 0
-	
-	var st = SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i in verts:
-		st.add_vertex(i)
-	if data.indexed:
-		st.index() #WARNING Indexing might not actually work pain
-	st.generate_normals()
-	st.commit(mesh)
-	if !mesh.get_surface_count() <= 0:
-		$StaticBody3D/CollisionShape3D.shape = mesh.create_trimesh_shape()
-		show()
-	else:
-		$StaticBody3D/CollisionShape3D.shape = null
-		hide()
-	generating = false
-	done_generating.emit()
-
-
-const edgeConnections: Array  = [
+const EDGE_CONNECTIONS: Array  = [
 		[0,1], [1,2], [2,3], [3,0],
 		[4,5], [5,6], [6,7], [7,4],
 		[0,4], [1,5], [2,6], [3,7]
 	]
 
-const cornerOffsets: Array = [
+const CORNER_OFFSETS: Array = [
 		[0, 0, 1],
 		[1, 0, 1],
 		[1, 0, 0],
@@ -130,7 +17,7 @@ const cornerOffsets: Array = [
 		[1, 1, 0],
 		[0, 1, 0]
 ]
-const cornerOffsetsVec: Array = [
+const CORNER_OFFSETS_VECTOR: Array = [
 		Vector3i(0, 0, 1),
 		Vector3i(1, 0, 1),
 		Vector3i(1, 0, 0),
@@ -141,7 +28,7 @@ const cornerOffsetsVec: Array = [
 		Vector3i(0, 1, 0)
 ]
 
-const triTable: Array = [
+const TRI_TABLE: Array = [
 		 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 		 [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 		 [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -399,24 +286,3 @@ const triTable: Array = [
 		 [0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 		 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
 	]
-
-
-func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
-	var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
-	var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
-	#(edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1)  / (valueAtVertex2 - valueAtVertex1))
-	var comp1 = isoLevel-valueAtVertex1
-	var lerp = edgeVertex1 + Vector3(comp1,comp1,comp1) * (edgeVertex2-edgeVertex1) / (valueAtVertex2-valueAtVertex1)
-	#print("fac: "+str(lerp))
-	return lerp#.clamp(-Vector3.ONE,Vector3.ONE)
-#func interp(edgeVertex1A:Array, valueAtVertex1:float, edgeVertex2A:Array, valueAtVertex2:float):
-	#var edgeVertex1 = Vector3(edgeVertex1A[0],edgeVertex1A[1],edgeVertex1A[2])
-	#var edgeVertex2 = Vector3(edgeVertex2A[0],edgeVertex2A[1],edgeVertex2A[2])
-	#return lerp(edgeVertex1,edgeVertex2,0.5)
-
-func PREPARE_TO_DIE():
-	if generating:
-		await done_generating
-		queue_free()
-	else:
-		queue_free()

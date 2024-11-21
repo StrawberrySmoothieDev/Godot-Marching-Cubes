@@ -18,6 +18,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 GlobalSignals="*res://GlobalSignals.gd"
+MarchingCubesLibrary="*res://Libraries/MarchingCubesLibrary.gd"
+DebugOverlay="*res://Libraries/DebugOverlay.gd"
 
 [display]
 
