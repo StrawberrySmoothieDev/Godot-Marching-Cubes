@@ -7,16 +7,19 @@ signal done_generating
 var data: GenerationData
 
 @export var dbg = false
+
 var full_dbg = false
 var generating = false
 var isoLevel = 0.0
 var thread: Thread
-#var mutex: Mutex
+var mutex: Mutex
 var pos = Vector3.ZERO
 var is_ready = false
 var start_time1
 var start_time2
 var st: SurfaceTool
+var is_active = true
+var presampled_points: Dictionary
 func _ready() -> void:
 	st = SurfaceTool.new()
 	thread = Thread.new()
@@ -27,14 +30,18 @@ func _ready() -> void:
 	
 func init(data:GenerationData):
 	self.data = data
+	is_active = eight_point_test()
 func u():
-	if is_ready:
+	if is_ready and is_active:
 		full_dbg = data.full_debug
 		pos = position+owner.position
 		mesh.clear_surfaces()
-		#mutex.lock()
 		thread.start(update_mesh)
-		gen_mesh(thread.wait_to_finish())
+		#gen_mesh(thread.wait_to_finish())
+		call_deferred("gen_mesh",thread.wait_to_finish())
+		#gen_mesh(update_mesh())
+	elif is_ready:
+		mesh.clear_surfaces()
 func update_mesh():
 	if dbg or full_dbg:
 		start_time1 = Time.get_ticks_msec()
@@ -46,15 +53,23 @@ func update_mesh():
 	var verts = PackedVector3Array()
 	var cubeIndex = 0;
 	var cubeValues = [0,0,0,0,0,0,0,0]
+	presampled_points = Dictionary()
 	for x in range(0,cubes/res):
 		for y in range(0,cubes/res):
 			for z in range(0,cubes/res):
 				if dbg:
 					print("Generated")
 				var offset = Vector3(x,y,z)*res
-				
+				#mutex.lock()
 				for i in range(0,8):
-					cubeValues[i] = remap(data.get_noise((offset+Vector3(MarchingCubesLibrary.CORNER_OFFSETS_VECTOR[i])*res)+(pos)),0,1,-1,1)
+					var pt = (offset+Vector3(MarchingCubesLibrary.CORNER_OFFSETS_VECTOR[i])*res)+(pos)
+					if presampled_points.has(pt):
+						cubeValues[i] = presampled_points.get(pt)
+					else:
+						var val = remap(data.get_noise(pt),0,1,-1,1)
+						cubeValues[i] = val
+						presampled_points[pt] = val
+				#mutex.unlock()
 					#saved_points_dict[str((offset+Vector3(MarchingCubesLibrary.CORNER_OFFSETS_VECTOR[i]))+(position))] = cubeValues[i]
 				if (cubeValues[0] < isoLevel): cubeIndex |= 1 #wha
 				if (cubeValues[1] < isoLevel): cubeIndex |= 2
@@ -65,7 +80,7 @@ func update_mesh():
 				if (cubeValues[6] < isoLevel): cubeIndex |= 64
 				if (cubeValues[7] < isoLevel): cubeIndex |= 128 #hhhhhhhhhhhhh
 
-				var edges = MarchingCubesLibrary.TRI_TABLE[cubeIndex] 
+				var edges = MarchingCubesLibrary.TRI_TABLE_DICT[cubeIndex] 
 				var i = 0
 				var override = 1000 #oop
 				while edges[i] != -1 and override > 0:
@@ -99,6 +114,8 @@ func update_mesh():
 				cubeIndex = 0
 	if dbg or full_dbg:
 		output_elapsed_time(start_time1)
+	#if verts:
+		#call_deferred("gen_mesh",verts)
 	return verts
 	
 func gen_mesh(verts:PackedVector3Array):
@@ -111,12 +128,12 @@ func gen_mesh(verts:PackedVector3Array):
 		st.index() #WARNING Indexing might not actually work pain
 	st.generate_normals()
 	st.commit(mesh)
-	#if !mesh.get_surface_count() <= 0:
-		#$StaticBody3D/CollisionShape3D.shape = mesh.create_trimesh_shape()
-		#show()
-	#else:
-		#$StaticBody3D/CollisionShape3D.shape = null
-		#hide()
+	if !mesh.get_surface_count() <= 0: #TODO: test if threading this speeds it up
+		$StaticBody3D/CollisionShape3D.shape = mesh.create_trimesh_shape()
+		show()
+	else:
+		$StaticBody3D/CollisionShape3D.shape = null
+		hide()
 	generating = false
 	done_generating.emit()
 	if dbg:
@@ -144,3 +161,50 @@ func output_elapsed_time(start_time):
 	var elapsed_time = Time.get_ticks_msec()-start_time
 	var amnt_of_frame = (elapsed_time/16.666666666666667)
 	print("Elapsed MS: "+str(elapsed_time)+" Frames elapsed: "+ str(amnt_of_frame))
+
+func eight_point_test():
+	var pos2 = position+owner.position
+	var inside = -1
+	for i in MarchingCubesLibrary.CORNER_OFFSETS_VECTOR:
+		var sample = remap(data.get_noise((pos2+Vector3(i*data.cubes_per_chunk))),0.0,1.0,-1.0,1.0)
+		var is_inside:bool = sample < data.iso
+		if inside == -1:
+			inside = int(is_inside)
+		elif int(is_inside) != inside:
+			#$Label3D.text = "Used"
+			return true
+	#$Label3D.text = "Unused"
+	return false
+	
+	
+	#print(str(get_std_dev(arr)))
+	#$Label3D.text = str(get_std_dev(arr))
+	#var b0 = remap(data.get_noise(pos),0,1,-1,1)
+	#var b1 = remap(data.get_noise(pos+Vector3(data.cubes_per_chunk)),0,1,-1,1)
+	#var b2 = remap(data.get_noise(pos+data.cubes_per_chunk),0,1,-1,1)
+
+func get_mean(array):
+	var sum = 0
+	for i in array:
+		sum = sum + i
+	var mean = sum/len(array)
+	return mean
+
+func get_std_dev(array):
+	# get mu
+	var mean = get_mean(array)
+	# (x[i] - mu)**2
+	for i in array:
+		array = (i - mean) ** 2
+		return array
+	var sum_sqr_diff = 0
+	# get sigma
+	for i in array:
+		sum_sqr_diff = sum_sqr_diff + i
+		return sum_sqr_diff
+	# get mean of squared differences
+	var variance = 1/len(array)
+	var mean_sqr_diff = (variance * sum_sqr_diff)
+	
+	var std_dev = sqrt(mean_sqr_diff)
+	return std_dev

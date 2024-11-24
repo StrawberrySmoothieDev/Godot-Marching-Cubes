@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://bmhsfkhw0qrse"]
 
 [ext_resource type="Script" path="res://PlanetTesting/PlayerMark2.gd" id="1_aios1"]
-[ext_resource type="Script" path="res://PlanetTesting/DBGVIEW.gd" id="2_iqm6b"]
+[ext_resource type="Script" path="res://FPS.gd" id="2_ypn85"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_g8si6"]
 friction = 100.0
@@ -99,7 +99,14 @@ one_shot = true
 wait_time = 0.05
 one_shot = true
 
-[node name="TextureRect" type="TextureRect" parent="."]
-offset_right = 504.0
-offset_bottom = 504.0
-script = ExtResource("2_iqm6b")
+[node name="Label" type="RichTextLabel" parent="."]
+custom_minimum_size = Vector2(256, 256)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -301.0
+offset_top = -1.0
+offset_right = -261.0
+offset_bottom = 22.0
+grow_horizontal = 0
+script = ExtResource("2_ypn85")

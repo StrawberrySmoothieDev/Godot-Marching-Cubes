@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="BufferData" load_steps=2 format=3 uid="uid://b8litjylkow18"]
+
+[ext_resource type="Script" path="res://Full Rework/BufferData.gd" id="1_soruo"]
+
+[resource]
+script = ExtResource("1_soruo")
+input = []
+uniform_type = 8
+binding = 0

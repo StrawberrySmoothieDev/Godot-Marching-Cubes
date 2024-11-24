@@ -1,12 +1,13 @@
 [gd_scene load_steps=12 format=3 uid="uid://cn3er7jkqy5vo"]
 
 [ext_resource type="Script" path="res://LocalizedChunking/localized_chunking_test.gd" id="1_gsnds"]
-[ext_resource type="Material" uid="uid://3wgv7eon2gox" path="res://!PrototypeTexture.tres" id="1_vbj48"]
 [ext_resource type="PackedScene" uid="uid://bmhsfkhw0qrse" path="res://PlanetTesting/player_mark_2.tscn" id="3_5nkbm"]
 [ext_resource type="Script" path="res://MeshTest/GenerationData.gd" id="5_l3lxo"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_b72fc"]
-frequency = 1.0
+noise_type = 2
+frequency = 0.0129
+fractal_type = 3
 
 [sub_resource type="NoiseTexture3D" id="NoiseTexture3D_fexoj"]
 noise = SubResource("FastNoiseLite_b72fc")
@@ -14,11 +15,11 @@ noise = SubResource("FastNoiseLite_b72fc")
 [sub_resource type="Resource" id="Resource_ukxav"]
 script = ExtResource("5_l3lxo")
 noise = SubResource("NoiseTexture3D_fexoj")
-iso = 60.0
-cubes_per_chunk = 8
+iso = 1600.0
+cubes_per_chunk = 16
 chunks = Vector3i(0, 0, 0)
 base_res = 1.0
-noise_power = 1.0
+noise_power = 16.0
 indexed = true
 sphereCenter = Vector3(0, 0, 0)
 full_debug = false
@@ -40,9 +41,13 @@ glow_enabled = true
 top_radius = 0.25
 bottom_radius = 0.25
 
+[sub_resource type="SphereShape3D" id="SphereShape3D_d75ih"]
+radius = 10339.6
+
 [node name="LocalizedChunkingTest" type="Node3D"]
 script = ExtResource("1_gsnds")
 debug = false
+localized_size = 6
 data = SubResource("Resource_ukxav")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -52,14 +57,8 @@ environment = SubResource("Environment_7udqd")
 transform = Transform3D(0.133986, -0.808779, 0.572647, 0, 0.577858, 0.816138, -0.990983, -0.109351, 0.0774249, 0, 0, 0)
 shadow_enabled = true
 
-[node name="CSGBox3D" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.381124, 0)
-use_collision = true
-size = Vector3(99.94, 1.762, 99.91)
-material = ExtResource("1_vbj48")
-
 [node name="PlayerMark2" parent="." instance=ExtResource("3_5nkbm")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.22122, 3.06856, 3.13132)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.221, 840, 3.131)
 sped = 35.0
 sprint_sped = 35.0
 
@@ -68,3 +67,12 @@ sprint_sped = 35.0
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.66019, 0)
 mesh = SubResource("CylinderMesh_7t3i8")
+
+[node name="Area3D" type="Area3D" parent="."]
+gravity_space_override = 3
+gravity_point = true
+gravity_point_center = Vector3(0, 0, 0)
+gravity_direction = Vector3(0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+shape = SubResource("SphereShape3D_d75ih")
