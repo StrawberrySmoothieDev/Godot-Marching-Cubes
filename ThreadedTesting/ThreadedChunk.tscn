@@ -17,11 +17,11 @@ uv1_world_triplanar = true
 uv2_triplanar = true
 uv2_world_triplanar = true
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_ywa13"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_yb82y"]
 
 [node name="ThreadedChunk" type="MeshInstance3D"]
 material_override = SubResource("StandardMaterial3D_d33ra")
-mesh = SubResource("ArrayMesh_ywa13")
+mesh = SubResource("ArrayMesh_yb82y")
 script = ExtResource("1_8onhm")
 
 [node name="Label3D" type="Label3D" parent="."]

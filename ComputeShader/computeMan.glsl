@@ -567,7 +567,7 @@ void main() { //Main code block
         // cubeValues[i] = distance(cornerOffsets[i]+offset+offset_position,noise_scale); //Generate from dist (sphere)
         // cubeValues[i] = rndCMS(noiseMap, (cornerOffsets[i] + offset + offset_position) / noise_scale).r; //Generate from editor noise
         // cubeValues[i] = planet_noise_sample(((cornerOffsets[i])+offset+offset_position)/noise_scale,seed); //Generate from simplex
-        cubeValues[i] = imageLoad(point_data_buffer,ivec3(((cornerOffsets[i])+offset+offset_position)/noise_scale));
+        // cubeValues[i] = imageLoad(point_data_buffer,ivec3(((cornerOffsets[i])+offset+offset_position)/noise_scale));
         // imageStore(point_data_buffer,ivec3(gl_GlobalInvocationID+uvec3(cornerOffsets[i])),vec4(cubeValues[i]/iso));
         
     }
