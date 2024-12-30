@@ -1,7 +1,7 @@
 @tool
 extends Node3D
-@onready var chunk = preload("res://ThreadedTesting/ThreadedChunk.tscn")
-@onready var dbg_outline = preload("res://ThreadedTesting/DebugOutline.tscn")
+@onready var chunk = preload("res://addons/UltimateMarchingCubes/Scenes/ThreadedChunk.tscn")
+@onready var dbg_outline = preload("res://addons/UltimateMarchingCubes/Scenes/DebugOutline.tscn")
 
 @export var data: GenerationData:
 	set(val):

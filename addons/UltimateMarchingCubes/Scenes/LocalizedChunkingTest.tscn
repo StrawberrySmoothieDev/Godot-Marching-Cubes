@@ -1,0 +1,66 @@
+[gd_scene load_steps=9 format=3 uid="uid://cn3er7jkqy5vo"]
+
+[ext_resource type="Script" path="res://addons/UltimateMarchingCubes/Scripts/localized_chunking_test.gd" id="1_ae6ci"]
+[ext_resource type="Resource" uid="uid://b283smvnt0xeo" path="res://addons/UltimateMarchingCubes/Resources/3.2kPlanet.tres" id="2_pa1ld"]
+[ext_resource type="PackedScene" uid="uid://cotovk6y7fai" path="res://Actors/EAPlayer.tscn" id="3_yh6x6"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_epaae"]
+
+[sub_resource type="Sky" id="Sky_kis6s"]
+sky_material = SubResource("ProceduralSkyMaterial_epaae")
+
+[sub_resource type="Environment" id="Environment_7udqd"]
+background_mode = 2
+sky = SubResource("Sky_kis6s")
+tonemap_mode = 2
+glow_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_length = 128.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_7t3i8"]
+top_radius = 0.25
+bottom_radius = 0.25
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_oe53v"]
+radius = 3200.0
+
+[node name="LocalizedChunkingTest" type="Node3D"]
+script = ExtResource("1_ae6ci")
+debug = false
+skip_NPT = true
+localized_size = 16
+data = ExtResource("2_pa1ld")
+view_influance = 4.0
+behind_influance = 0.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_7udqd")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.133986, -0.808779, 0.572647, 0, 0.577858, 0.816138, -0.990983, -0.109351, 0.0774249, 0, 772.054, 0)
+shadow_enabled = true
+
+[node name="PlayerMark3" parent="." instance=ExtResource("3_yh6x6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1700, 6.522)
+velocity = Vector3(0, -2.20071, 0)
+sprinting_speed = 100.0
+jump_force = 64.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.66019, 0)
+mesh = SubResource("CylinderMesh_7t3i8")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+use_collision = true
+size = Vector3(100, 1, 100)
+
+[node name="Node3D" type="Node3D" parent="."]
+
+[node name="Area3D" type="Area3D" parent="."]
+gravity_space_override = 3
+gravity_point = true
+gravity_point_center = Vector3(0, 0, 0)
+gravity_direction = Vector3(0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+shape = SubResource("SphereShape3D_oe53v")

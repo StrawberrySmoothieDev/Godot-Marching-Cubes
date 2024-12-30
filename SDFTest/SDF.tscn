@@ -1,0 +1,45 @@
+[gd_scene load_steps=8 format=3 uid="uid://bjpi03wx6geh4"]
+
+[ext_resource type="Script" path="res://SDFTest/sdf.gd" id="1_t8qgp"]
+[ext_resource type="Script" path="res://addons/UltimateMarchingCubes/Scripts/debug_outline.gd" id="2_xjjhh"]
+[ext_resource type="Shader" path="res://addons/UltimateMarchingCubes/WireframeDebug.gdshader" id="3_h81ln"]
+
+[sub_resource type="Gradient" id="Gradient_xy5od"]
+colors = PackedColorArray(0.75, 0, 0, 1, 0, 1, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_t2dht"]
+gradient = SubResource("Gradient_xy5od")
+use_hdr = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vshsg"]
+render_priority = 0
+shader = ExtResource("3_h81ln")
+shader_parameter/modelColor = Color(0, 0, 0, 0)
+shader_parameter/width = 2.216
+shader_parameter/modelOpacity = 0.0
+shader_parameter/filtered = false
+
+[sub_resource type="BoxMesh" id="BoxMesh_uslfp"]
+
+[node name="Sdf" type="Node3D"]
+script = ExtResource("1_t8qgp")
+
+[node name="DebugOutline" type="Node3D" parent="."]
+transform = Transform3D(8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0)
+script = ExtResource("2_xjjhh")
+color_ramp = SubResource("GradientTexture1D_t2dht")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="DebugOutline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
+material_override = SubResource("ShaderMaterial_vshsg")
+instance_shader_parameters/wireframeColor = Color(0, 1, 0, 1)
+mesh = SubResource("BoxMesh_uslfp")
+skeleton = NodePath("../..")
+
+[node name="Label3D" type="Label3D" parent="DebugOutline/MeshInstance3D"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+billboard = 1
+text = "(-4, -4, 4)"
+
+[node name="Marker3D" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)

@@ -5,7 +5,7 @@
  #|___|   /_/ \_\ |_|  |_|   |___/  \___/    |_|   |_|_\  \___/   \___/  |___/
 extends RigidBody3D
 
-class_name Player
+class_name PlayerOld
 
 @export var mouse_sense = 0.1
 @export var sped = 15.0
@@ -16,10 +16,9 @@ class_name Player
 @export var throw_power = 10.0
 @export var double_jump = 2
 @export var gravity_correct = true
-@export var o2 = 1000.0
-@export var o2_max = 1000.0
 
-@onready var camera = $CameraTransform/SecondaryTransform/Camera
+
+@onready var camera:Camera3D = $CameraTransform/SecondaryTransform/Camera
 @onready var primary_camera_transform = $CameraTransform
 @onready var secondary_camera_transform = $CameraTransform/SecondaryTransform
 
@@ -62,7 +61,6 @@ func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _physics_process(delta):
-	o2-=2*delta
 	var h_rot = primary_camera_transform.rotation.y
 	var force = Input.get_action_strength("move_backward") - Input.get_action_strength("move_forward")
 	
@@ -89,8 +87,11 @@ func _physics_process(delta):
 		physics_material_override.friction = lerp(physics_material_override.friction,10.0,0.7*delta)
 	else:
 		physics_material_override.friction = 0.0
-	#if Input.is_action_pressed("M1"):
-		#look_checker.force_raycast_update()
+	if Input.is_action_just_pressed("M1"):
+		look_checker.force_raycast_update()
+		var col = look_checker.get_collider()
+		if col and col.owner is ThreadedChunk:
+			col.owner.toggle_DBG()
 		#var pos = look_checker.get_collision_point()
 		#%ComputeTest.terraform(pos)
 	#var move_input = Input.get_vector("move_left","move_right","move_backward","move_forward")

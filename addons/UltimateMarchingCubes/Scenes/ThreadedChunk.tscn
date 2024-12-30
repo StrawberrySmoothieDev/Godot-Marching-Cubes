@@ -1,0 +1,176 @@
+[gd_scene load_steps=15 format=3 uid="uid://dek8gnaxh8w7k"]
+
+[ext_resource type="Script" path="res://addons/UltimateMarchingCubes/Scripts/threaded_chunk.gd" id="1_8onhm"]
+[ext_resource type="Shader" path="res://addons/UltimateMarchingCubes/WireframeDebug.gdshader" id="2_3blv7"]
+
+[sub_resource type="Shader" id="Shader_ng12d"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.3.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
+
+instance uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+varying vec3 uv1_triplanar_pos;
+varying vec3 uv2_triplanar_pos;
+
+uniform float uv1_blend_sharpness : hint_range(0.0, 150.0, 0.001);
+varying vec3 uv1_power_normal;
+uniform float uv2_blend_sharpness : hint_range(0.0, 150.0, 0.001);
+varying vec3 uv2_power_normal;
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	vec3 normal = MODEL_NORMAL_MATRIX * NORMAL;
+
+	TANGENT = vec3(0.0, 0.0, -1.0) * abs(normal.x);
+	TANGENT += vec3(1.0, 0.0, 0.0) * abs(normal.y);
+	TANGENT += vec3(1.0, 0.0, 0.0) * abs(normal.z);
+	TANGENT = inverse(MODEL_NORMAL_MATRIX) * normalize(TANGENT);
+
+	BINORMAL = vec3(0.0, 1.0, 0.0) * abs(normal.x);
+	BINORMAL += vec3(0.0, 0.0, -1.0) * abs(normal.y);
+	BINORMAL += vec3(0.0, 1.0, 0.0) * abs(normal.z);
+	BINORMAL = inverse(MODEL_NORMAL_MATRIX) * normalize(BINORMAL);
+
+	// UV1 Triplanar: Enabled (with World Triplanar)
+	uv1_power_normal = pow(abs(normal), vec3(uv1_blend_sharpness));
+	uv1_triplanar_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz * uv1_scale + uv1_offset;
+	uv1_power_normal /= dot(uv1_power_normal, vec3(1.0));
+	uv1_triplanar_pos *= vec3(1.0, -1.0, 1.0);
+
+	// UV2 Triplanar: Enabled (with World Triplanar)
+	uv2_power_normal = pow(abs(mat3(MODEL_MATRIX) * NORMAL), vec3(uv2_blend_sharpness));
+	uv2_triplanar_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz * uv2_scale + uv2_offset;
+	uv2_power_normal /= dot(uv2_power_normal, vec3(1.0));
+	uv2_triplanar_pos *= vec3(1.0, -1.0, 1.0);
+}
+
+vec4 triplanar_texture(sampler2D p_sampler, vec3 p_weights, vec3 p_triplanar_pos) {
+	vec4 samp = vec4(0.0);
+	samp += texture(p_sampler, p_triplanar_pos.xy) * p_weights.z;
+	samp += texture(p_sampler, p_triplanar_pos.xz) * p_weights.y;
+	samp += texture(p_sampler, p_triplanar_pos.zy * vec2(-1.0, 1.0)) * p_weights.x;
+	return samp;
+}
+
+void fragment() {
+	vec4 albedo_tex = triplanar_texture(texture_albedo, uv1_power_normal, uv1_triplanar_pos);
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(triplanar_texture(texture_metallic, uv1_power_normal, uv1_triplanar_pos), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(triplanar_texture(texture_roughness, uv1_power_normal, uv1_triplanar_pos), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+}
+"
+
+[sub_resource type="Gradient" id="Gradient_7o14n"]
+colors = PackedColorArray(0.250102, 0.241156, 0.266906, 1, 0.437763, 0.437763, 0.437763, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_yp5d5"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vuxgg"]
+in_3d_space = true
+seamless = true
+color_ramp = SubResource("Gradient_7o14n")
+noise = SubResource("FastNoiseLite_yp5d5")
+
+[sub_resource type="Gradient" id="Gradient_nhqe3"]
+colors = PackedColorArray(0.507972, 0.507972, 0.507972, 1, 1, 1, 1, 1)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_xlaop"]
+in_3d_space = true
+seamless = true
+color_ramp = SubResource("Gradient_nhqe3")
+noise = SubResource("FastNoiseLite_yp5d5")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_oyuau"]
+render_priority = 0
+shader = SubResource("Shader_ng12d")
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = null
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_blend_sharpness = 1.0
+shader_parameter/uv2_blend_sharpness = 1.0
+shader_parameter/uv1_scale = Vector3(0.01, 0.01, 0.01)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
+shader_parameter/texture_albedo = SubResource("NoiseTexture2D_vuxgg")
+shader_parameter/texture_roughness = SubResource("NoiseTexture2D_xlaop")
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_xs01h"]
+
+[sub_resource type="Gradient" id="Gradient_xy5od"]
+colors = PackedColorArray(0.75, 0, 0, 1, 0, 1, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_w4s63"]
+gradient = SubResource("Gradient_xy5od")
+use_hdr = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vshsg"]
+render_priority = 0
+shader = ExtResource("2_3blv7")
+shader_parameter/modelColor = Color(0, 0, 0, 0)
+shader_parameter/width = 2.216
+shader_parameter/modelOpacity = 0.0
+shader_parameter/filtered = false
+
+[sub_resource type="BoxMesh" id="BoxMesh_uslfp"]
+
+[node name="ThreadedChunk" type="MeshInstance3D"]
+material_override = SubResource("ShaderMaterial_oyuau")
+instance_shader_parameters/albedo = Color(1, 1, 1, 1)
+mesh = SubResource("ArrayMesh_xs01h")
+script = ExtResource("1_8onhm")
+color_ramp = SubResource("GradientTexture1D_w4s63")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+
+[node name="DebugOutline" type="Node3D" parent="."]
+visible = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="DebugOutline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
+material_override = SubResource("ShaderMaterial_vshsg")
+mesh = SubResource("BoxMesh_uslfp")
+skeleton = NodePath("../..")
+
+[node name="Label3D2" type="Label3D" parent="DebugOutline/MeshInstance3D"]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0.4, 0)
+billboard = 1
+no_depth_test = true
+text = "uwu"
+
+[node name="Label3D3" type="Label3D" parent="DebugOutline/MeshInstance3D"]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+billboard = 1
+no_depth_test = true
+text = "uwu"
+
+[node name="Label3D4" type="Label3D" parent="DebugOutline/MeshInstance3D"]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, -0.4, 0)
+billboard = 1
+no_depth_test = true
+text = "uwu"

@@ -1,0 +1,232 @@
+[gd_scene load_steps=9 format=3 uid="uid://cotovk6y7fai"]
+
+[ext_resource type="Script" path="res://Actors/EndlessAbyssPlayer.gd" id="1_3b8gn"]
+[ext_resource type="Script" path="res://Actors/PlayerModel.gd" id="2_2agmr"]
+[ext_resource type="FontFile" uid="uid://cns14dp7jc6r5" path="res://Actors/HALFLIFE2.ttf" id="4_1f44l"]
+[ext_resource type="FontFile" uid="uid://dacdlvtgu6bx0" path="res://Actors/HL2crosshairs.ttf" id="5_yr7ms"]
+[ext_resource type="Script" path="res://FPS.gd" id="10_gcy1g"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jou6l"]
+margin = 0.1
+radius = 0.382
+height = 1.7
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_e3vh6"]
+radius = 0.38
+height = 1.7
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8pwb5"]
+size = Vector3(0.59, 0.21, 1.21)
+
+[node name="PlayerMark2" type="CharacterBody3D" groups=["Player"]]
+collision_layer = 9
+collision_mask = 9
+input_ray_pickable = false
+script = ExtResource("1_3b8gn")
+base_speed = 7.0
+sprinting_speed = 10.0
+gravity_multiplier = 1.5
+cam_rotation_amount = 0.07
+weapon_rotation_amount = 0.01
+
+[node name="Body" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_jou6l")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_e3vh6")
+skeleton = NodePath("")
+script = ExtResource("2_2agmr")
+hide_in_game = false
+
+[node name="Camera" type="Camera3D" parent="." groups=["PlayerCamera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00132477, 0.53667, 0.000582218)
+current = true
+far = 100000.0
+
+[node name="Area3D" type="Area3D" parent="Camera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, -0.121042, -1.54623)
+input_ray_pickable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Camera/Area3D"]
+shape = SubResource("BoxShape3D_8pwb5")
+
+[node name="SpotLight3D" type="SpotLight3D" parent="Camera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.43812)
+visible = false
+light_energy = 5.0
+spot_range = 30.0
+spot_angle = 25.3099
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="Camera/SpotLight3D"]
+
+[node name="CrosshairChecker" type="RayCast3D" parent="Camera" groups=["CrosshairChecker"]]
+transform = Transform3D(0.33, 0, 0, 0, 0.33, 0, 0, 0, 0.33, 0, 0, -0.313491)
+target_position = Vector3(0, 0, -400)
+collision_mask = 11
+hit_back_faces = false
+collide_with_areas = true
+
+[node name="MainUILayer" type="CanvasLayer" parent="."]
+follow_viewport_enabled = true
+
+[node name="Control" type="Control" parent="MainUILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MainUILayer/Control"]
+custom_minimum_size = Vector2(100, 25)
+layout_mode = 0
+offset_left = 910.0
+offset_right = 1010.0
+offset_bottom = 25.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+mouse_filter = 2
+text = "PAIn"
+fit_content = true
+script = ExtResource("10_gcy1g")
+
+[node name="RichTextLabel2" type="RichTextLabel" parent="MainUILayer/Control"]
+custom_minimum_size = Vector2(100, 25)
+layout_mode = 0
+offset_left = 910.0
+offset_top = 166.0
+offset_right = 1010.0
+offset_bottom = 191.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+mouse_filter = 2
+text = "PAIn"
+fit_content = true
+
+[node name="DefCrosshair" type="TextureRect" parent="MainUILayer/Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -64.0
+offset_right = 64.0
+offset_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MainUILayer/Control/DefCrosshair"]
+layout_mode = 0
+offset_left = 25.0
+offset_top = -5.0
+offset_right = 103.0
+offset_bottom = 142.0
+theme_override_fonts/font = ExtResource("4_1f44l")
+theme_override_font_sizes/font_size = 121
+text = "Q"
+
+[node name="HoldCrosshair" type="TextureRect" parent="MainUILayer/Control"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -64.0
+offset_right = 64.0
+offset_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MainUILayer/Control"]
+visible = false
+layout_mode = 0
+offset_right = 1672.0
+offset_bottom = 47.0
+theme_override_font_sizes/font_size = 41
+text = "Press R While near the windshield to toggle piloting mode."
+
+[node name="Panel2" type="Panel" parent="MainUILayer/Control"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MainUILayer/Control/Panel2"]
+clip_contents = false
+custom_minimum_size = Vector2(900, 128)
+layout_mode = 0
+offset_left = 64.0
+offset_top = 3.0
+offset_right = 964.0
+offset_bottom = 131.0
+theme_override_font_sizes/normal_font_size = 30
+text = "wwhhhhhhhhhhhhhdsnakdddaks"
+autowrap_mode = 2
+
+[node name="HighlightsLayer" type="CanvasLayer" parent="."]
+follow_viewport_enabled = true
+
+[node name="Sprite2D" type="Sprite2D" parent="HighlightsLayer"]
+scale = Vector2(3, 3)
+region_enabled = true
+region_rect = Rect2(12, 28, 24, 24)
+
+[node name="Label" type="Label" parent="HighlightsLayer/Sprite2D"]
+offset_left = 19.0
+offset_top = -28.0
+offset_right = 59.0
+offset_bottom = 41.0
+rotation = 0.785398
+theme_override_fonts/font = ExtResource("5_yr7ms")
+theme_override_font_sizes/font_size = 74
+text = "{"
+
+[node name="Sprite2D2" type="Sprite2D" parent="HighlightsLayer"]
+region_enabled = true
+region_rect = Rect2(12, 76, 24, 24)
+
+[node name="Sprite2D3" type="Sprite2D" parent="HighlightsLayer"]
+region_enabled = true
+region_rect = Rect2(92, 28, 24, 24)
+
+[node name="TextureRect" type="TextureRect" parent="HighlightsLayer/Sprite2D3"]
+custom_minimum_size = Vector2(32, 32)
+offset_left = 13.0
+offset_top = -17.0
+offset_right = 45.0
+offset_bottom = 15.0
+expand_mode = 1
+
+[node name="Sprite2D4" type="Sprite2D" parent="HighlightsLayer"]
+scale = Vector2(3, 3)
+region_enabled = true
+region_rect = Rect2(92, 76, 24, 24)
+
+[node name="Label" type="Label" parent="HighlightsLayer/Sprite2D4"]
+offset_left = -19.6667
+offset_top = 29.0
+offset_right = 20.3333
+offset_bottom = 98.0
+rotation = 3.92699
+theme_override_fonts/font = ExtResource("5_yr7ms")
+theme_override_font_sizes/font_size = 74
+text = "{"
+
+[node name="FrictionTimer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[node name="InteractDelayTimer" type="Timer" parent="."]
+wait_time = 0.05
+one_shot = true

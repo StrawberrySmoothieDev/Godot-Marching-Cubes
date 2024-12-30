@@ -1,0 +1,46 @@
+[gd_scene load_steps=5 format=3 uid="uid://b6d537oco4d4q"]
+
+[ext_resource type="Script" path="res://WarpingTest/Warp.gd" id="1_ds8md"]
+
+[sub_resource type="Shader" id="Shader_of58x"]
+code = "shader_type spatial;
+uniform vec3 warp_pos;
+uniform float scalar = 1.0;
+void vertex() {
+	
+	vec3 a = VERTEX + (scalar-1.0)*warp_pos;
+	VERTEX = a;
+}
+
+void fragment() {
+	// Called for every pixel the material is visible on.
+}
+
+//void light() {
+	// Called for every pixel for every light affecting the material.
+	// Uncomment to replace the default light processing function with this one.
+//}
+
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4qv26"]
+render_priority = 0
+shader = SubResource("Shader_of58x")
+shader_parameter/warp_pos = Vector3(0, 0, 1.17054)
+shader_parameter/scalar = 0.58
+
+[sub_resource type="SphereMesh" id="SphereMesh_ls1hi"]
+
+[node name="WarpingTest" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." node_paths=PackedStringArray("marker")]
+material_override = SubResource("ShaderMaterial_4qv26")
+mesh = SubResource("SphereMesh_ls1hi")
+script = ExtResource("1_ds8md")
+marker = NodePath("../Node3D/Marker3D")
+
+[node name="Node3D" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Marker3D" type="Marker3D" parent="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.17054)
